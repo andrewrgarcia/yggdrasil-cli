@@ -1,6 +1,5 @@
 use clap::Parser;
 use walkdir::WalkDir;
-use glob::Pattern;
 
 mod formatter;
 use formatter::{MarkdownFormatter, CliFormatter, OutputFormatter};
@@ -32,29 +31,42 @@ struct Args {
 /// Check if a path matches any --only filters
 fn matches_only_filters(path: &str, filters: &Vec<String>) -> bool {
     if filters.is_empty() {
-        return true; // no restriction
+        return true;
     }
 
+    // Normalize path (remove leading ./ if present)
+    let norm_path = path.strip_prefix("./").unwrap_or(path);
+
+    // Get basename for file-only checks
+    let base = std::path::Path::new(norm_path)
+        .file_name()
+        .and_then(|n| n.to_str())
+        .unwrap_or("");
+
     for f in filters {
-        // Exact match
-        if path == f {
+        // Normalize filter too
+        let norm_filter = f.strip_prefix("./").unwrap_or(f);
+
+        // Exact match (full path or basename)
+        if norm_path == norm_filter || base == norm_filter {
             return true;
         }
 
-        // Directory prefix match
-        if path.starts_with(f) {
+        // Directory prefix (src matches src/main.rs)
+        if norm_path.starts_with(norm_filter) {
             return true;
         }
 
-        // Glob pattern (*.tex, src/*.rs, etc.)
-        if let Ok(pattern) = Pattern::new(f) {
-            if pattern.matches(path) {
+        // Glob pattern
+        if let Ok(pattern) = glob::Pattern::new(norm_filter) {
+            if pattern.matches(norm_path) || pattern.matches(base) {
                 return true;
             }
         }
     }
     false
 }
+
 
 /// Collect files according to filters
 fn collect_files(root: &str, args: &Args) -> Vec<String> {
