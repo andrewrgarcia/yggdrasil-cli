@@ -1,7 +1,9 @@
-/target
+target
 
 # test / sample files for dev
 main.cpp
 equation.tex
 quantum_cats.tex
 EXPORT.md
+GUMBO.md
+src/deeper/hello.py

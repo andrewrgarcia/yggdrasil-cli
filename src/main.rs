@@ -5,6 +5,7 @@ mod formatter;
 use formatter::{MarkdownFormatter, CliFormatter, OutputFormatter};
 use std::fs::File;
 use std::io::{self, Write};
+use atty::Stream;
 
 #[derive(Parser, Debug)]
 #[command(author, version, about = "✨ Yggdrasil CLI — the god-tree of your codebase. AI-ready directory discovery.", long_about = None)]
@@ -45,7 +46,7 @@ struct Args {
 
 fn matches_ignore_filters(path: &str, filters: &Vec<String>) -> bool {
     if filters.is_empty() {
-        return false; // nothing to ignore
+        return false;
     }
 
     let norm_path = path.strip_prefix("./").unwrap_or(path);
@@ -57,17 +58,14 @@ fn matches_ignore_filters(path: &str, filters: &Vec<String>) -> bool {
     for f in filters {
         let norm_filter = f.strip_prefix("./").unwrap_or(f);
 
-        // Full path match or basename
         if norm_path == norm_filter || base == norm_filter {
             return true;
         }
 
-        // Directory prefix
         if norm_path.starts_with(norm_filter) {
             return true;
         }
 
-        // Glob
         if let Ok(pattern) = glob::Pattern::new(norm_filter) {
             if pattern.matches(norm_path) || pattern.matches(base) {
                 return true;
@@ -76,6 +74,7 @@ fn matches_ignore_filters(path: &str, filters: &Vec<String>) -> bool {
     }
     false
 }
+
 
 fn matches_only_filters(path: &str, filters: &Vec<String>) -> bool {
     if filters.is_empty() {
@@ -208,7 +207,11 @@ fn main() {
         let fmt = MarkdownFormatter;
         run(&fmt, &args, &root, &ignore_patterns, &mut *writer);
     } else {
-        let fmt = CliFormatter;
+        // colored only if stdout is a tty
+        let fmt = CliFormatter { colored: args.out.is_none() && atty::is(Stream::Stdout) };
         run(&fmt, &args, &root, &ignore_patterns, &mut *writer);
     }
 }
+
+
+
