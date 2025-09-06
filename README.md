@@ -1,6 +1,6 @@
 <!-- LOGO -->
 <p align="center">
-  <img src="https://github.com/user-attachments/assets/PLACEHOLDER-YGG-LOGO.png" width="200" alt="yggdrasil logo"/>
+  <img src="https://github.com/user-attachments/assets/ad569d6e-1e01-407c-a282-3e3d2abb97dd" width="200" alt="yggdrasil logo"/>
 </p>
 
 <h1 align="center"> Yggdrasil</h1>
@@ -14,6 +14,7 @@ Flatten your entire project into an AI-ready codex — index + contents, in one 
 ## 🤔 What is Yggdrasil?
 
 Yggdrasil CLI is a **project flattener**: it takes your codebase and transforms it into a single, structured document.  
+
 Think of it as **`tree` meets `cat`**, but with superpowers:
 
 - 📂 **Files** → indexed, filtered by extension, glob, or blacklist.  
