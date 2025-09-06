@@ -1,5 +1,6 @@
 use colored::*;
 use std::fs;
+use atty::Stream;
 
 pub trait OutputFormatter {
     fn print_preamble(&self, root: &str);
@@ -22,16 +23,19 @@ impl OutputFormatter for MarkdownFormatter {
 
     fn print_index(&self, files: &Vec<String>) {
         for file in files {
-            println!("- {}", file);
+            // Anchor = sanitize file path (replace / and . with -)
+            let anchor = file.replace("/", "-").replace(".", "-");
+            println!("- [{}](#{})", file, anchor);
         }
         println!("\n---\n\n## 📑 File Contents\n");
     }
 
     fn print_contents(&self, files: &Vec<String>) {
         for file in files {
+            // Heading shows raw path for AI-readability
             println!("### <{}>", file);
             println!("```");
-            if let Ok(content) = fs::read_to_string(file) {
+            if let Ok(content) = std::fs::read_to_string(file) {
                 print!("{}", content);
             } else {
                 println!("❌ Error reading file");
@@ -43,14 +47,26 @@ impl OutputFormatter for MarkdownFormatter {
 
 pub struct CliFormatter;
 
+
 impl OutputFormatter for CliFormatter {
     fn print_preamble(&self, root: &str) {
         let title = "✨ Directory Codex:".bright_magenta().bold();
         let path = root.truecolor(0, 255, 255).bold();
         println!("{} {}", title, path);
 
-        let brand = "*Made with Yggdrasil*".truecolor(255, 100, 0);
-        println!("{}", brand);
+        // If stdout is a terminal → clickable yellow link
+        // Else → plain text + URL
+        if atty::is(Stream::Stdout) {
+            let link = format!(
+                "\x1b]8;;https://crates.io/crates/yggdrasil-cli\x1b\\{}\x1b]8;;\x1b\\",
+                "*Made with Yggdrasil*".truecolor(255, 255, 0).bold()
+            );
+            println!("{}", link);
+        } else {
+            println!(
+                "*Made with Yggdrasil* <https://crates.io/crates/yggdrasil-cli>"
+            );
+        }
 
         let note = "\nSchema: index first, then file contents.\n\
         - Files are listed under '📄 Files'.\n\
@@ -65,7 +81,7 @@ impl OutputFormatter for CliFormatter {
             let text = file.truecolor(0, 255, 255);
             println!("{} {}", icon, text);
         }
-        println!("\n{}", "===============================================".truecolor(255, 100, 0));
+        println!("\n{}", "===============================================".truecolor(255, 255, 0));
         println!("{}", "📑 File Contents".bright_magenta().bold());
     }
 
