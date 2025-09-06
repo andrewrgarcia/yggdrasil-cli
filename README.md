@@ -48,18 +48,49 @@ Yggdrasil generates two sections:
 ### Example commands
 
 ```bash
-# Export your repo as Markdown
-ygg --show --md --contents --out EXPORT.md
+# Export your repo as Markdown (index + contents)
+ygg --show --md --contents --out SHOW.md
 
-# Show only Rust + Markdown files
-ygg --show rs md --contents
+# List only file paths (no contents)
+ygg --show rs
+ygg --show py
+ygg --show json --ignore node_modules .next
+
+# Restrict scan to a subdir
+ygg --show md --only src
 
 # Exclude files listed in BLACK.md
 ygg --show --blacklist BLACK.md --contents
 
+# Show only files listed in a manifest (WHITE.md)
+ygg --show --manifest WHITE.md --contents
+
 # Pipe into another tool (AI, pager, etc.)
 ygg --show --md --contents | less
-````
+```
+
+---
+
+## 📄 Manifest files
+
+A manifest is just a plain text file with **one path per line**.
+Only the files listed in the manifest will be shown.
+
+Example `WHITE.md`:
+
+```
+src/pages/codebase.tsx
+src/data/codebaseAssets.tsx
+src/i18n/codebase.en.json
+src/i18n/codebase.es.json
+src/types/codebase.ts
+```
+
+Run with:
+
+```bash
+ygg --show --manifest WHITE.md --contents
+```
 
 ---
 
