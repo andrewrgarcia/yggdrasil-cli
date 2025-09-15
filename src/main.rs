@@ -216,6 +216,13 @@ fn collect_files(
     files
 }
 
+fn count_lines(path: &str) -> usize {
+    if let Ok(content) = std::fs::read_to_string(path) {
+        content.lines().count()
+    } else {
+        0
+    }
+}
 
 fn run(
     fmt: &dyn OutputFormatter,

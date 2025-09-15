@@ -1,6 +1,7 @@
 use colored::*;
 use std::fs;
 use std::io::Write;
+use crate::count_lines;
 
 pub trait OutputFormatter {
     fn print_preamble(&self, root: &str, out: &mut dyn Write);
@@ -13,7 +14,7 @@ pub struct MarkdownFormatter;
 
 impl OutputFormatter for MarkdownFormatter {
     fn print_preamble(&self, root: &str, out: &mut dyn Write) {
-        writeln!(out, "# ✨ Directory Codex: {}\n", root).unwrap();
+        writeln!(out, "# ✨ Project Snapshot: {}\n", root).unwrap();
         writeln!(out, "*Made with [Yggdrasil](https://crates.io/crates/yggdrasil)*  \n").unwrap();
         writeln!(out, "*This document contains two sections:*  ").unwrap();
         writeln!(out, "- **Files** → index of all paths.  ").unwrap();
@@ -43,7 +44,12 @@ impl OutputFormatter for MarkdownFormatter {
             // Code block with file content
             writeln!(out, "```").unwrap();
             if let Ok(content) = fs::read_to_string(file) {
-                write!(out, "{}", content).unwrap();
+                // Ensure content always ends with newline
+                if content.ends_with('\n') {
+                    write!(out, "{}", content).unwrap();
+                } else {
+                    writeln!(out, "{}", content).unwrap();
+                }
             } else {
                 writeln!(out, "❌ Error reading file").unwrap();
             }
@@ -60,7 +66,7 @@ pub struct CliFormatter {
 impl OutputFormatter for CliFormatter {
     fn print_preamble(&self, root: &str, out: &mut dyn Write) {
         if self.colored {
-            let title = "✨ Directory Codex:".bright_magenta().bold();
+            let title = "✨ Project Snapshot:".bright_magenta().bold();
             let path = root.truecolor(0, 255, 255).bold();
             writeln!(out, "{} {}", title, path).unwrap();
 
@@ -71,7 +77,7 @@ impl OutputFormatter for CliFormatter {
             );
             writeln!(out, "{}", link).unwrap();
         } else {
-            writeln!(out, "✨ Directory Codex: {}", root).unwrap();
+            writeln!(out, "✨ Project Snapshot: {}", root).unwrap();
             writeln!(out, "*Made with Yggdrasil* (https://crates.io/crates/yggdrasil-cli)").unwrap();
         }
 
@@ -85,30 +91,48 @@ impl OutputFormatter for CliFormatter {
     }
 
     fn print_index(&self, files: &Vec<String>, out: &mut dyn Write) {
+        // find max width for padding
+        let max_len = files.iter().map(|f| f.len()).max().unwrap_or(0);
+
         if self.colored {
             writeln!(out, "{}", "📄 Files".bright_magenta().bold()).unwrap();
             for file in files {
                 let icon = "📄".truecolor(255, 255, 0);
                 let text = file.truecolor(0, 255, 255);
-                writeln!(out, "{} {}", icon, text).unwrap();
+                let lines = count_lines(file);
+                writeln!(
+                    out,
+                    "{} {:<width$} {} lines",
+                    icon,
+                    text,
+                    lines,
+                    width = max_len + 2
+                ).unwrap();
             }
             writeln!(
                 out,
                 "\n{}",
                 "===============================================".truecolor(255, 255, 0)
-            )
-            .unwrap();
+            ).unwrap();
             writeln!(out, "{}", "📑 File Contents".bright_magenta().bold()).unwrap();
         } else {
             writeln!(out, "📄 Files").unwrap();
             for file in files {
-                writeln!(out, "📄 {}", file).unwrap();
+                let lines = count_lines(file);
+                writeln!(
+                    out,
+                    "📄 {:<width$} {} lines",
+                    file,
+                    lines,
+                    width = max_len + 2
+                ).unwrap();
             }
             writeln!(out, "\n===============================================").unwrap();
             writeln!(out, "📑 File Contents").unwrap();
         }
     }
 
+    
     fn print_contents(&self, files: &Vec<String>, out: &mut dyn Write) {
         for file in files {
             if self.colored {
