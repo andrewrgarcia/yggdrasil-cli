@@ -15,3 +15,10 @@ quantum_cats.tex
 EXPORT.md
 GUMBO.md
 src/deeper/hello.py
+*.zip
+
+# manifest list
+WHITE.md
+
+# contents output
+SHOW.md
