@@ -40,7 +40,7 @@ fn test_against_fixture() {
     // Run CLI
     Command::cargo_bin("ygg")
         .unwrap()
-        .args(&["--show", "rs", "--only", "src", "--out"])
+        .args(&["--show", "rs", "--only", "src", "--no-lines", "--out"])
         .arg(&outfile)
         .assert()
         .success();

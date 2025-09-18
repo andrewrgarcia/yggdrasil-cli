@@ -58,9 +58,14 @@ fn main() {
     };
 
     if use_md {
-        run(&MarkdownFormatter, &args, &root, &mut *writer);
+        let fmt = MarkdownFormatter { show_lines: !args.no_lines };
+        run(&fmt, &args, &root, &mut *writer);
     } else {
-        let fmt = CliFormatter { colored: args.out.is_none() && atty::is(Stream::Stdout) };
+        let fmt = CliFormatter {
+            colored: args.out.is_none() && atty::is(Stream::Stdout),
+            show_lines: !args.no_lines,
+        };
         run(&fmt, &args, &root, &mut *writer);
     }
+
 }

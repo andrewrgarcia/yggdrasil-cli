@@ -49,6 +49,10 @@ pub struct Args {
     #[arg(long, num_args = 1.., value_delimiter = ' ')]
     pub only: Vec<String>,
 
+    /// Do not display line counts in file index
+    #[arg(long)]
+    pub no_lines: bool,
+
     /// Provide inline patterns to ignore (globs, names, etc.)
     #[arg(long, num_args = 1.., value_delimiter = ' ')]
     pub ignore: Vec<String>,

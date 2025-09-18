@@ -10,7 +10,15 @@ pub trait OutputFormatter {
 }
 
 /// Markdown-style formatter
-pub struct MarkdownFormatter;
+pub struct MarkdownFormatter {
+    pub show_lines: bool,
+}
+
+/// CLI-style formatter
+pub struct CliFormatter {
+    pub colored: bool,
+    pub show_lines: bool,
+}
 
 impl OutputFormatter for MarkdownFormatter {
     fn print_preamble(&self, root: &str, out: &mut dyn Write) {
@@ -25,10 +33,16 @@ impl OutputFormatter for MarkdownFormatter {
     fn print_index(&self, files: &Vec<FileEntry>, out: &mut dyn Write) {
         for entry in files {
             let anchor = entry.path.replace("/", "-").replace(".", "-");
-            writeln!(out, "- [{}]({})", entry.path, format!("#{anchor}")).unwrap();
+
+            if self.show_lines {
+                writeln!(out, "- [{} ({} lines)](#{})", entry.path, entry.line_count, anchor).unwrap();
+            } else {
+                writeln!(out, "- [{}](#{})", entry.path, anchor).unwrap();
+            }
         }
         writeln!(out, "\n---\n\n## 📑 File Contents\n").unwrap();
     }
+
 
     fn print_contents(&self, files: &Vec<FileEntry>, out: &mut dyn Write) {
         for entry in files {
@@ -50,11 +64,6 @@ impl OutputFormatter for MarkdownFormatter {
             writeln!(out, "```\n").unwrap();
         }
     }
-}
-
-/// CLI-style formatter
-pub struct CliFormatter {
-    pub colored: bool,
 }
 
 impl OutputFormatter for CliFormatter {
@@ -92,14 +101,25 @@ impl OutputFormatter for CliFormatter {
             for entry in files {
                 let icon = "📄".truecolor(255, 255, 0);
                 let text = entry.path.truecolor(0, 255, 255);
-                writeln!(
-                    out,
-                    "{} {:<width$} {} lines",
-                    icon,
-                    text,
-                    entry.line_count,
-                    width = max_len + 2
-                ).unwrap();
+
+                if self.show_lines {
+                    writeln!(
+                        out,
+                        "{} {:<width$} {} lines",
+                        icon,
+                        text,
+                        entry.line_count,
+                        width = max_len + 2
+                    ).unwrap();
+                } else {
+                    writeln!(
+                        out,
+                        "{} {:<width$}",
+                        icon,
+                        text,
+                        width = max_len + 2
+                    ).unwrap();
+                }
             }
             writeln!(
                 out,
@@ -110,18 +130,28 @@ impl OutputFormatter for CliFormatter {
         } else {
             writeln!(out, "📄 Files").unwrap();
             for entry in files {
-                writeln!(
-                    out,
-                    "📄 {:<width$} {} lines",
-                    entry.path,
-                    entry.line_count,
-                    width = max_len + 2
-                ).unwrap();
+                if self.show_lines {
+                    writeln!(
+                        out,
+                        "📄 {:<width$} {} lines",
+                        entry.path,
+                        entry.line_count,
+                        width = max_len + 2
+                    ).unwrap();
+                } else {
+                    writeln!(
+                        out,
+                        "📄 {:<width$}",
+                        entry.path,
+                        width = max_len + 2
+                    ).unwrap();
+                }
             }
             writeln!(out, "\n===============================================").unwrap();
             writeln!(out, "📑 File Contents").unwrap();
         }
     }
+
 
     fn print_contents(&self, files: &Vec<FileEntry>, out: &mut dyn Write) {
         for entry in files {
@@ -176,7 +206,7 @@ mod tests {
     #[test]
     fn test_markdown_preamble() {
         let mut buf = Vec::new();
-        let fmt = MarkdownFormatter;
+        let fmt = MarkdownFormatter { show_lines: false };
         fmt.print_preamble(".", &mut buf);
         let out = String::from_utf8(buf).unwrap();
 
@@ -187,7 +217,7 @@ mod tests {
     #[test]
     fn test_markdown_index_contains_links() {
         let mut buf = Vec::new();
-        let fmt = MarkdownFormatter;
+        let fmt = MarkdownFormatter { show_lines: false };
         fmt.print_index(&sample_files(), &mut buf);
         let out = String::from_utf8(buf).unwrap();
 
@@ -196,21 +226,21 @@ mod tests {
     }
 
     #[test]
-    fn test_cli_index_colored_and_plain() {
+    fn test_cli_index_plain() {
         let mut buf = Vec::new();
-        let fmt = CliFormatter { colored: false };
+        let fmt = CliFormatter { colored: false, show_lines: false };
         fmt.print_index(&sample_files(), &mut buf);
         let out = String::from_utf8(buf).unwrap();
 
         assert!(out.contains("📄 Files"));
         assert!(out.contains("src/main.rs"));
-        assert!(out.contains("10 lines"));
+        assert!(!out.contains("10 lines")); // ensure no line counts
     }
 
     #[test]
     fn test_cli_preamble_plaintext() {
         let mut buf = Vec::new();
-        let fmt = CliFormatter { colored: false };
+        let fmt = CliFormatter { colored: false, show_lines: false };
         fmt.print_preamble(".", &mut buf);
         let out = String::from_utf8(buf).unwrap();
 
@@ -221,11 +251,10 @@ mod tests {
     #[test]
     fn test_file_contents_marker() {
         let mut buf = Vec::new();
-        let fmt = CliFormatter { colored: false };
+        let fmt = CliFormatter { colored: false, show_lines: false };
         fmt.print_contents(&sample_files(), &mut buf);
         let out = String::from_utf8(buf).unwrap();
 
-        // Should at least contain start/end markers for files
         assert!(out.contains("<<< FILE START: src/main.rs >>>"));
         assert!(out.contains("<<< FILE END: src/main.rs >>>"));
     }
