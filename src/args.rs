@@ -41,6 +41,10 @@ pub struct Args {
     #[arg(long)]
     pub contents: bool,
 
+    /// Output in Markdown format
+    #[arg(long)]
+    pub md: bool,
+
     /// Restrict output to these files/dirs/globs
     #[arg(long, num_args = 1.., value_delimiter = ' ')]
     pub only: Vec<String>,
