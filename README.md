@@ -55,7 +55,7 @@ ygg --show --md --contents --out SHOW.md
 # List only file paths (no contents)
 ygg --show rs
 ygg --show py
-````
+```
 
 ### Diff Examples
 
