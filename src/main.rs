@@ -3,6 +3,7 @@ mod args;
 mod scanner;
 mod formatter;
 mod types;
+mod diff;
 
 use args::{Cli, Commands, Args};
 use formatter::{CliFormatter, MarkdownFormatter, OutputFormatter};
@@ -12,6 +13,8 @@ use std::io::{self, Write};
 use atty::Stream;
 use clap::Parser;
 use clap::CommandFactory; // for Cli::command()
+use diff::run_diff;
+
 
 fn run(
     fmt: &dyn OutputFormatter,
@@ -26,57 +29,6 @@ fn run(
 
     if args.contents {
         fmt.print_contents(&files, out);
-    }
-}
-
-use std::collections::HashSet;
-use std::fs;
-use similar::{TextDiff, ChangeTag};
-
-fn run_diff(from: Vec<String>, to: Vec<String>) {
-    let from_set: HashSet<_> = from.iter().collect();
-    let to_set: HashSet<_> = to.iter().collect();
-
-    // Deleted files
-    for f in from_set.difference(&to_set) {
-        println!("- {}", f);
-    }
-
-    // New files
-    for f in to_set.difference(&from_set) {
-        println!("+ {}", f);
-    }
-
-    // Common files → line diffs
-    for f in from_set.intersection(&to_set) {
-        let from_content = fs::read_to_string(f).unwrap_or_default();
-        let to_content = fs::read_to_string(f).unwrap_or_default();
-
-        if from_content == to_content {
-            continue; // unchanged
-        }
-
-        println!("\n📄 Diff for {f}:\n");
-
-        let diff = TextDiff::from_lines(&from_content, &to_content);
-
-        for change in diff.iter_all_changes() {
-            let sign = match change.tag() {
-                ChangeTag::Delete => "-",
-                ChangeTag::Insert => "+",
-                ChangeTag::Equal  => " ",
-            };
-
-            // Use ANSI color
-            let colored = match change.tag() {
-                ChangeTag::Delete => format!("\x1b[91m{}{}\x1b[0m", sign, change),
-                ChangeTag::Insert => format!("\x1b[92m{}{}\x1b[0m", sign, change),
-                ChangeTag::Equal  => format!(" {}{}", sign, change),
-            };
-            print!("{}", colored);
-        }
-
-        println!();
     }
 }
 
