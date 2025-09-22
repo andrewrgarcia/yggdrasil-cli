@@ -1,10 +1,9 @@
 target
+*.zip 
 
-# test / sample files for dev
-main.cpp
-equation.tex
-quantum_cats.tex
-EXPORT.md
-GUMBO.md
+# FUR 
+fur/
+
+# YGG files
 SHOW.md
-src/deeper/hello.py
+

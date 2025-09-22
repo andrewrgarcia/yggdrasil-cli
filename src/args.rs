@@ -1,4 +1,4 @@
-use clap::{Parser};
+use clap::{Parser, Subcommand};
 
 #[derive(Parser, Debug)]
 #[command(
@@ -6,28 +6,32 @@ use clap::{Parser};
     author,
     version,
     about = "✨ Yggdrasil CLI — the god-tree of your codebase.",
-    long_about = "Flatten your project into an AI-ready snapshot codex — index + contents in one command.",
-    after_help = "
-Examples:
-  # Export repo contents as Markdown-coded codex
-  ygg --show --contents --out SHOW.md
-
-  # List all Rust files (paths only)
-  ygg --show rs
-
-  # List all JSON files except node_modules & .next
-  ygg --show json --ignore node_modules .next
-
-  # Restrict scan to Markdown files only inside src/ dir
-  ygg --show md --only src
-
-  # Exclude files via blacklist
-  ygg --show --blacklist BLACK.md --contents 
-
-  # Show only files listed in a manifest and export as CLI-coded codex
-  ygg --show --manifest WHITE.md --contents --out show.txt
-"
+    long_about = "Flatten your project into an AI-ready snapshot codex — index + contents in one command."
 )]
+pub struct Cli {
+    #[command(subcommand)]
+    pub command: Option<Commands>,
+
+    #[command(flatten)]
+    pub args: Args, // your global flags stay the same
+}
+
+#[derive(Subcommand, Debug)]
+pub enum Commands {
+    /// Compare two sets of files (original vs modified)
+    Diff {
+        /// First set of files (before `--`)
+        #[arg(required = true, num_args = 1.., value_delimiter = ' ')]
+        from: Vec<String>,
+
+        /// Second set of files (after `--`)
+        #[arg(required = true, num_args = 1.., last = true)]
+        to: Vec<String>,
+    },
+}
+
+// Your existing Args struct remains unchanged
+#[derive(clap::Args, Debug)]
 pub struct Args {
     /// Root directory to scan
     #[arg(default_value = ".")]

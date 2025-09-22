@@ -31,17 +31,27 @@ impl OutputFormatter for MarkdownFormatter {
     }
 
     fn print_index(&self, files: &Vec<FileEntry>, out: &mut dyn Write) {
-        for entry in files {
-            let anchor = entry.path.replace("/", "-").replace(".", "-");
+        if self.show_lines {
+            let mut total_lines = 0;
 
-            if self.show_lines {
+            for entry in files {
+                let anchor = entry.path.replace("/", "-").replace(".", "-");
+                total_lines += entry.line_count;
                 writeln!(out, "- [{} ({} lines)](#{})", entry.path, entry.line_count, anchor).unwrap();
-            } else {
+            }
+
+            writeln!(out, "\n====").unwrap();
+            writeln!(out, "- [📦 Total LOC ({} lines)](#)\n", total_lines).unwrap();
+        } else {
+            for entry in files {
+                let anchor = entry.path.replace("/", "-").replace(".", "-");
                 writeln!(out, "- [{}](#{})", entry.path, anchor).unwrap();
             }
         }
+
         writeln!(out, "\n---\n\n## 📑 File Contents\n").unwrap();
     }
+
 
 
     fn print_contents(&self, files: &Vec<FileEntry>, out: &mut dyn Write) {
@@ -112,15 +122,23 @@ impl OutputFormatter for CliFormatter {
                         width = max_len + 2
                     ).unwrap();
                 } else {
-                    writeln!(
-                        out,
-                        "{} {:<width$}",
-                        icon,
-                        text,
-                        width = max_len + 2
-                    ).unwrap();
+                    writeln!(out, "{} {:<width$}", icon, text, width = max_len + 2).unwrap();
                 }
             }
+
+            if self.show_lines {
+                let total_lines: usize = files.iter().map(|f| f.line_count).sum();
+
+                writeln!(out, "\n====").unwrap();
+                writeln!(
+                    out,
+                    "{:<width$} {} lines\n",
+                    "📦 Total LOC".bright_magenta().bold(),
+                    total_lines.to_string().bright_magenta().bold(),
+                    width = max_len + 2
+                ).unwrap();
+            }
+
             writeln!(
                 out,
                 "\n{}",
@@ -139,14 +157,23 @@ impl OutputFormatter for CliFormatter {
                         width = max_len + 2
                     ).unwrap();
                 } else {
-                    writeln!(
-                        out,
-                        "📄 {:<width$}",
-                        entry.path,
-                        width = max_len + 2
-                    ).unwrap();
+                    writeln!(out, "📄 {:<width$}", entry.path, width = max_len + 2).unwrap();
                 }
             }
+
+            if self.show_lines {
+                let total_lines: usize = files.iter().map(|f| f.line_count).sum();
+
+                writeln!(out, "\n====").unwrap();
+                writeln!(
+                    out,
+                    "📄 {:<width$} {} lines\n",
+                    "📦 Total LOC",
+                    total_lines,
+                    width = max_len + 2
+                ).unwrap();
+            }
+
             writeln!(out, "\n===============================================").unwrap();
             writeln!(out, "📑 File Contents").unwrap();
         }

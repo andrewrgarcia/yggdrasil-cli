@@ -8,13 +8,6 @@ target
 Cargo.lock
 Cargo.toml 
 
-# test / sample files for dev (same as those ignored in .gitignore, not seen to public)
-main.cpp
-equation.tex
-quantum_cats.tex
-EXPORT.md
-GUMBO.md
-src/deeper/hello.py
 *.zip
 
 # manifest list
