@@ -34,8 +34,17 @@ fn build_index(files: &[(String, String)]) -> LineIndex {
     index
 }
 
-/// Try to extend a block starting from a matched line
-fn extend_block(
+/// Detects structural boundaries (likely start/end of a block)
+fn is_boundary(line: &str) -> bool {
+    let trimmed = line.trim_start();
+    trimmed.is_empty()
+        || trimmed.starts_with("class ")
+        || trimmed.starts_with("def ")
+        || trimmed.starts_with("@")
+}
+
+/// Extend a block from a matched line, respecting structural boundaries
+fn extend_structural_block(
     from_lines: &[&str],
     to_lines: &[&str],
     from_start: usize,
@@ -48,12 +57,18 @@ fn extend_block(
 
     // extend forward
     while f2 < from_lines.len() && t2 < to_lines.len() && from_lines[f2] == to_lines[t2] {
+        if is_boundary(from_lines[f2]) || is_boundary(to_lines[t2]) {
+            break;
+        }
         f2 += 1;
         t2 += 1;
     }
 
     // extend backward
     while f1 > 0 && t1 > 0 && from_lines[f1 - 1] == to_lines[t1 - 1] {
+        if is_boundary(from_lines[f1 - 1]) || is_boundary(to_lines[t1 - 1]) {
+            break;
+        }
         f1 -= 1;
         t1 -= 1;
     }
@@ -61,10 +76,10 @@ fn extend_block(
     (f1, f2, t1, t2)
 }
 
-/// Find block matches between two file sets
 pub fn find_block_matches(
     from_files: &[(String, String)],
     to_files: &[(String, String)],
+    min_block_size: usize,
 ) -> Vec<BlockMatch> {
     let index = build_index(to_files);
     let mut matches = Vec::new();
@@ -73,27 +88,31 @@ pub fn find_block_matches(
 
     for (from_file, content) in from_files {
         let from_lines: Vec<&str> = content.lines().collect();
-        for (i, line) in from_lines.iter().enumerate() {
-            let h = hash_line(line);
 
-            // Skip already matched lines
+        for (i, line) in from_lines.iter().enumerate() {
             if visited_from.contains(&(from_file.clone(), i)) {
                 continue;
             }
 
+            let h = hash_line(line);
             if let Some(candidates) = index.get(&h) {
                 for (to_file, j) in candidates {
                     if visited_to.contains(&(to_file.clone(), *j)) {
                         continue;
                     }
 
-                    let to_content = to_files.iter().find(|(f, _)| f == to_file).unwrap().1.clone();
+                    let to_content = to_files
+                        .iter()
+                        .find(|(f, _)| f == to_file)
+                        .unwrap()
+                        .1
+                        .clone();
                     let to_lines: Vec<&str> = to_content.lines().collect();
 
-                    let (f1, f2, t1, t2) = extend_block(&from_lines, &to_lines, i, *j);
+                    let (f1, f2, t1, t2) =
+                        extend_structural_block(&from_lines, &to_lines, i, *j);
 
-                    // Only record blocks with ≥3 lines
-                    if f2 - f1 >= 3 {
+                    if f2 - f1 >= min_block_size {
                         for k in f1..f2 {
                             visited_from.insert((from_file.clone(), k));
                         }
@@ -115,7 +134,6 @@ pub fn find_block_matches(
 
     matches
 }
-
 
 /// Run a codex diff across two sets of files
 pub fn run_diff(from: Vec<String>, to: Vec<String>) {
@@ -153,7 +171,7 @@ pub fn run_diff(from: Vec<String>, to: Vec<String>) {
         .map(|f| (f.clone(), fs::read_to_string(f).unwrap_or_default()))
         .collect();
 
-    let block_matches = find_block_matches(&from_files, &to_files);
+    let block_matches = find_block_matches(&from_files, &to_files, 3);
 
     if !block_matches.is_empty() {
         println!("\n📦 Cross-file block matches:");
@@ -167,10 +185,25 @@ pub fn run_diff(from: Vec<String>, to: Vec<String>) {
                 m.to_range.0,
                 m.to_range.1
             );
+
+            // show preview from source file
+            if let Ok(src) = fs::read_to_string(&m.from_file) {
+                let lines: Vec<&str> = src.lines().collect();
+                let preview: Vec<&str> = lines[m.from_range.0..m.from_range.1]
+                    .iter()
+                    .take(3)
+                    .map(|s| *s)
+                    .collect();
+                for p in preview {
+                    println!("    {}", p);
+                }
+                if lines[m.from_range.0..m.from_range.1].len() > 3 {
+                    println!("    ...");
+                }
+            }
         }
     }
 }
-
 
 /// Print a line-by-line diff for a single file
 fn diff_file_contents(file: &str, from_content: &str, to_content: &str) {
@@ -182,13 +215,13 @@ fn diff_file_contents(file: &str, from_content: &str, to_content: &str) {
         let sign = match change.tag() {
             ChangeTag::Delete => "-",
             ChangeTag::Insert => "+",
-            ChangeTag::Equal  => " ",
+            ChangeTag::Equal => " ",
         };
 
         let colored = match change.tag() {
             ChangeTag::Delete => format!("\x1b[91m{}{}\x1b[0m", sign, change),
             ChangeTag::Insert => format!("\x1b[92m{}{}\x1b[0m", sign, change),
-            ChangeTag::Equal  => format!(" {}{}", sign, change),
+            ChangeTag::Equal => format!(" {}{}", sign, change),
         };
 
         print!("{}", colored);
