@@ -1,15 +1,12 @@
 use std::fs;
+use std::collections::{HashMap, HashSet, BTreeMap};
+use std::path::Path;
 use similar::{TextDiff, ChangeTag};
-use std::collections::{HashMap, HashSet};
 use blake3;
+use atty::Stream;
 
-#[derive(Debug, Clone)]
-pub struct BlockMatch {
-    pub from_file: String,
-    pub from_range: (usize, usize),
-    pub to_file: String,
-    pub to_range: (usize, usize),
-}
+use crate::types::{BlockMatch, BlockWithVote, GroupedMatches};
+use crate::formatter_diff::{DiffFormatter, DiffCliFormatter, DiffMarkdownFormatter};
 
 /// Index: hash -> all (file, line_no) occurrences
 type LineIndex = HashMap<u64, Vec<(String, usize)>>;
@@ -76,6 +73,7 @@ fn extend_structural_block(
     (f1, f2, t1, t2)
 }
 
+/// Find block matches between file sets
 pub fn find_block_matches(
     from_files: &[(String, String)],
     to_files: &[(String, String)],
@@ -135,10 +133,125 @@ pub fn find_block_matches(
     matches
 }
 
+/// Multi-pass matching with different block size thresholds
+pub fn find_block_matches_multi(
+    from_files: &[(String, String)],
+    to_files: &[(String, String)],
+) -> Vec<BlockMatch> {
+    let mut all_matches = Vec::new();
+    let mut visited_from: HashSet<(String, usize)> = HashSet::new();
+    let mut visited_to: HashSet<(String, usize)> = HashSet::new();
+
+    for &min_block_size in &[5, 3, 1] {
+        let matches = find_block_matches(from_files, to_files, min_block_size)
+            .into_iter()
+            .filter(|m| m.from_range.1 - m.from_range.0 >= min_block_size)
+            .collect::<Vec<_>>();
+
+        for m in &matches {
+            for i in m.from_range.0..m.from_range.1 {
+                visited_from.insert((m.from_file.clone(), i));
+            }
+            for j in m.to_range.0..m.to_range.1 {
+                visited_to.insert((m.to_file.clone(), j));
+            }
+        }
+        all_matches.extend(matches);
+    }
+
+    all_matches
+}
+
+/// Expand a list of files/dirs into flat file paths (recursively)
+fn expand_paths(paths: &[String]) -> Vec<String> {
+    let mut files = Vec::new();
+
+    for p in paths {
+        let path = Path::new(p);
+        if path.is_file() {
+            files.push(p.clone());
+        } else if path.is_dir() {
+            let walker = walkdir::WalkDir::new(path).into_iter();
+            for entry in walker.filter_map(Result::ok) {
+                if entry.file_type().is_file() {
+                    if let Some(s) = entry.path().to_str() {
+                        files.push(s.to_string());
+                    }
+                }
+            }
+        } else {
+            eprintln!("⚠️ Path not found: {}", p);
+        }
+    }
+
+    files
+}
+
+fn hash_block(lines: &[&str]) -> u64 {
+    let joined = lines.join("\n");
+    let h = blake3::hash(joined.as_bytes());
+    let mut buf = [0u8; 8];
+    buf.copy_from_slice(&h.as_bytes()[..8]);
+    u64::from_le_bytes(buf)
+}
+
+/// Group matches and tag duplicates as additions
+fn group_and_filter_matches(
+    matches: Vec<BlockMatch>,
+    from_files: &[(String, String)],
+) -> Vec<GroupedMatches> {
+    let mut grouped: BTreeMap<(String, String), Vec<BlockWithVote>> = BTreeMap::new();
+
+    // Map file → line vector
+    let mut file_lines: HashMap<String, Vec<String>> = HashMap::new();
+    for (fname, content) in from_files {
+        file_lines.insert(fname.clone(), content.lines().map(|s| s.to_string()).collect());
+    }
+
+    // Track hashes → whether already seen
+    let mut seen_blocks: HashMap<u64, bool> = HashMap::new();
+
+    for m in matches {
+        let mut is_addition = false;
+
+        if let Some(lines) = file_lines.get(&m.from_file) {
+            let block: Vec<&str> = lines[m.from_range.0..m.from_range.1]
+                .iter()
+                .map(|s| s.as_str())
+                .collect();
+            let bhash = hash_block(&block);
+
+            if seen_blocks.contains_key(&bhash) {
+                is_addition = true;
+            } else {
+                seen_blocks.insert(bhash, true);
+            }
+        }
+
+        grouped
+            .entry((m.from_file.clone(), m.to_file.clone()))
+            .or_default()
+            .push(BlockWithVote { block: m, is_addition });
+    }
+
+    grouped
+        .into_iter()
+        .map(|((from, to), blocks)| GroupedMatches {
+            from_file: from,
+            to_file: to,
+            blocks,
+        })
+        .collect()
+}
+
 /// Run a codex diff across two sets of files
 pub fn run_diff(from: Vec<String>, to: Vec<String>) {
-    let from_set: HashSet<_> = from.iter().collect();
-    let to_set: HashSet<_> = to.iter().collect();
+    // Expand dirs → files
+    let from_files = expand_paths(&from);
+    let to_files   = expand_paths(&to);
+
+    let from_set: HashSet<_> = from_files.iter().collect();
+    let to_set: HashSet<_> = to_files.iter().collect();
 
     // Deleted files
     for f in from_set.difference(&to_set) {
@@ -161,49 +274,43 @@ pub fn run_diff(from: Vec<String>, to: Vec<String>) {
     }
 
     // --- NEW: cross-file block matches ---
-    let from_files: Vec<(String, String)> = from
+    let from_files_content: Vec<(String, String)> = from_files
         .iter()
         .map(|f| (f.clone(), fs::read_to_string(f).unwrap_or_default()))
         .collect();
 
-    let to_files: Vec<(String, String)> = to
+    let to_files_content: Vec<(String, String)> = to_files
         .iter()
         .map(|f| (f.clone(), fs::read_to_string(f).unwrap_or_default()))
         .collect();
 
-    let block_matches = find_block_matches(&from_files, &to_files, 3);
+    let block_matches = find_block_matches_multi(&from_files_content, &to_files_content);
 
     if !block_matches.is_empty() {
-        println!("\n📦 Cross-file block matches:");
-        for m in block_matches {
-            println!(
-                "🔀 {}:{}–{} → {}:{}–{}",
-                m.from_file,
-                m.from_range.0,
-                m.from_range.1,
-                m.to_file,
-                m.to_range.0,
-                m.to_range.1
-            );
+        let grouped = group_and_filter_matches(block_matches, &from_files_content);
 
-            // show preview from source file
-            if let Ok(src) = fs::read_to_string(&m.from_file) {
-                let lines: Vec<&str> = src.lines().collect();
-                let preview: Vec<&str> = lines[m.from_range.0..m.from_range.1]
-                    .iter()
-                    .take(3)
-                    .map(|s| *s)
-                    .collect();
-                for p in preview {
-                    println!("    {}", p);
-                }
-                if lines[m.from_range.0..m.from_range.1].len() > 3 {
-                    println!("    ...");
-                }
+        if !grouped.is_empty() {
+            // pick formatter
+            let use_md = to.iter().any(|f| f.ends_with(".md"));
+            let mut writer: Box<dyn std::io::Write> = Box::new(std::io::stdout());
+
+            if use_md {
+                let fmt = DiffMarkdownFormatter;
+                fmt.print_preamble(&mut *writer);
+                fmt.print_index(&grouped, &mut *writer);
+                fmt.print_contents(&grouped, &mut *writer);
+            } else {
+                let fmt = DiffCliFormatter {
+                    colored: atty::is(Stream::Stdout),
+                };
+                fmt.print_preamble(&mut *writer);
+                fmt.print_index(&grouped, &mut *writer);
+                fmt.print_contents(&grouped, &mut *writer);
             }
         }
     }
 }
+
 
 /// Print a line-by-line diff for a single file
 fn diff_file_contents(file: &str, from_content: &str, to_content: &str) {

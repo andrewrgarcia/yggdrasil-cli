@@ -4,6 +4,7 @@ mod scanner;
 mod formatter;
 mod types;
 mod diff;
+mod formatter_diff;
 
 use args::{Cli, Commands, Args};
 use formatter::{CliFormatter, MarkdownFormatter, OutputFormatter};
