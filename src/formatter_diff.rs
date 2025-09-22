@@ -1,4 +1,3 @@
-// src/formatter_diff.rs
 use std::fs;
 use std::io::Write;
 use colored::*;
@@ -17,6 +16,7 @@ pub struct DiffMarkdownFormatter;
 /// CLI-style diff formatter
 pub struct DiffCliFormatter {
     pub colored: bool,
+    pub align_tags: bool,   // 🔹 NEW toggle
 }
 
 impl DiffFormatter for DiffMarkdownFormatter {
@@ -40,27 +40,34 @@ impl DiffFormatter for DiffMarkdownFormatter {
 
             if let Ok(src) = fs::read_to_string(&g.from_file) {
                 let lines: Vec<&str> = src.lines().collect();
+
+                // find longest line for alignment
+                let max_len = lines.iter().map(|l| l.len()).max().unwrap_or(0);
+
                 for (lineno, line) in lines.iter().enumerate() {
-                    let tag = String::new();
+                    let mut tag = String::new();
 
                     for bwv in &g.blocks {
                         let m = &bwv.block;
-                        let tag = if bwv.is_addition {
-                            format!(" // [ADD] ({}–{} → {}–{})",
-                                m.from_range.0, m.from_range.1, m.to_file, m.to_range.0)
-                        } else {
-                            format!(" // [MOVED] ({}–{} → {}–{})",
-                                m.from_range.0, m.from_range.1, m.to_file, m.to_range.0)
-                        };
+                        // ✅ read is_addition so compiler doesn’t complain
+                        let status = if bwv.is_addition { "[ADDED]" } else { "[MOVED]" };
 
                         if lineno >= m.from_range.0 && lineno < m.from_range.1 {
-                            writeln!(out, "{:>4} {}{}", lineno + 1, line, tag).unwrap();
+                            tag = format!(
+                                " // {} ({}–{} → {}–{})",
+                                status,
+                                m.from_range.0, m.from_range.1,
+                                m.to_file, m.to_range.0
+                            );
                             break;
                         }
                     }
 
 
-                    writeln!(out, "{:>4} {}{}", lineno + 1, line, tag).unwrap();
+                    writeln!(out, "{:>4} {}", lineno + 1, line).unwrap();
+                    if !tag.is_empty() {
+                        writeln!(out, "{:>width$}{}", "", tag, width = 6 + max_len).unwrap();
+                    }
                 }
             }
             writeln!(out, "```\n").unwrap();
@@ -111,33 +118,63 @@ impl DiffFormatter for DiffCliFormatter {
 
             if let Ok(src) = fs::read_to_string(&g.from_file) {
                 let lines: Vec<&str> = src.lines().collect();
+                let max_len = lines.iter().map(|l| l.len()).max().unwrap_or(0);
+
                 for (lineno, line) in lines.iter().enumerate() {
                     let mut tag = String::new();
 
                     for bwv in &g.blocks {
                         let m = &bwv.block;
+                        // ✅ read is_addition so compiler doesn’t complain
+                        let status = if bwv.is_addition { "[ADDED]" } else { "[MOVED]" };
+
                         if lineno >= m.from_range.0 && lineno < m.from_range.1 {
-                            tag = if bwv.is_addition {
-                                format!(" [ADD] ({}–{} → {}–{})",
-                                    m.from_range.0, m.from_range.1, m.to_file, m.to_range.0)
-                            } else {
-                                format!(" [MOVED] ({}–{} → {}–{})",
-                                    m.from_range.0, m.from_range.1, m.to_file, m.to_range.0)
-                            };
+                            tag = format!(
+                                " {} ({}–{} → {}–{})",
+                                status,
+                                m.from_range.0, m.from_range.1,
+                                m.to_file, m.to_range.0
+                            );
                             break;
                         }
                     }
 
-                    if self.colored {
-                        writeln!(
-                            out,
-                            "{:>4} {}{}",
-                            lineno + 1,
-                            line,
-                            tag.bright_yellow()
-                        ).unwrap();
+
+
+                    if self.align_tags {
+                        // pad code so tags align
+                        if self.colored {
+                            writeln!(
+                                out,
+                                "{:>4} {:<width$}{}",
+                                lineno + 1,
+                                line,
+                                tag.bright_yellow(),
+                                width = max_len + 1
+                            ).unwrap();
+                        } else {
+                            writeln!(
+                                out,
+                                "{:>4} {:<width$}{}",
+                                lineno + 1,
+                                line,
+                                tag,
+                                width = max_len + 1
+                            ).unwrap();
+                        }
                     } else {
-                        writeln!(out, "{:>4} {}{}", lineno + 1, line, tag).unwrap();
+                        // original inline style
+                        if self.colored {
+                            writeln!(
+                                out,
+                                "{:>4} {}{}",
+                                lineno + 1,
+                                line,
+                                tag.bright_yellow()
+                            ).unwrap();
+                        } else {
+                            writeln!(out, "{:>4} {}{}", lineno + 1, line, tag).unwrap();
+                        }
                     }
                 }
             }

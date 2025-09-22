@@ -4,7 +4,6 @@ use std::path::Path;
 use similar::{TextDiff, ChangeTag};
 use blake3;
 use atty::Stream;
-
 use crate::types::{BlockMatch, BlockWithVote, GroupedMatches};
 use crate::formatter_diff::{DiffFormatter, DiffCliFormatter, DiffMarkdownFormatter};
 
@@ -245,8 +244,7 @@ fn group_and_filter_matches(
 }
 
 /// Run a codex diff across two sets of files
-pub fn run_diff(from: Vec<String>, to: Vec<String>) {
-    // Expand dirs → files
+pub fn run_diff(from: Vec<String>, to: Vec<String>, align_tags: bool) {
     let from_files = expand_paths(&from);
     let to_files   = expand_paths(&to);
 
@@ -302,6 +300,7 @@ pub fn run_diff(from: Vec<String>, to: Vec<String>) {
             } else {
                 let fmt = DiffCliFormatter {
                     colored: atty::is(Stream::Stdout),
+                    align_tags: align_tags,
                 };
                 fmt.print_preamble(&mut *writer);
                 fmt.print_index(&grouped, &mut *writer);

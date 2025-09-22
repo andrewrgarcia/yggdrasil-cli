@@ -45,8 +45,8 @@ fn main() {
     }
 
     match cli.command {
-        Some(Commands::Diff { from, to }) => {
-            run_diff(from, to);
+        Some(Commands::Diff { from, to, align_tags }) => {
+            run_diff(from, to, align_tags);
         }
         None => {
             let args = cli.args;

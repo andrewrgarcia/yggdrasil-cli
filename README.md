@@ -13,39 +13,40 @@ Flatten your entire project into an AI-ready codex — index + contents, in one 
 
 ## 🤔 What is Yggdrasil?
 
-Yggdrasil CLI is a **project flattener**: it takes your codebase and transforms it into a single, structured document.  
+Yggdrasil CLI is a **project flattener and diff tool**:  
+it takes your codebase and transforms it into a single, structured document — or compares snapshots with rich, annotated diffs.  
 
-Think of it as **`tree` meets `cat`**, but with superpowers:
+Think of it as **`tree` + `cat` + `diff`**, but with superpowers:
 
 - 📂 **Files** → indexed, filtered by extension, glob, or blacklist.  
 - 📑 **Contents** → full text for each file, neatly marked.  
 - 🔗 **Anchors** → clickable links from index → content (Markdown mode).  
 - 🎨 **Stylish CLI** → cyberpunk colors, or plain mode for piping.  
 - 🛡 **Controls** → `--only`, `--ignore`, `--blacklist`, `--out`.  
-
-Why? To make your repo **AI-ready, doc-ready, and share-ready.**
+- 🧩 **Diff Mode** → cross-file block detection with `[MOVED]` annotations.  
+- 📐 **Align Tags** → `--align-tags` keeps metadata comments lined up.  
 
 ---
 
 ## 🌟 Why would I want this?
 
-- 🤖 **AI Prompts**: Feed your repo as one codex to ChatGPT/Claude.  
+- 🤖 **AI Prompts**: Feed your repo or a diff as one codex to ChatGPT/Claude.  
 - 📚 **Docs & Reviews**: Export a clean snapshot for collaborators.  
-- 🧑‍💻 **Developers**: Browse projects with context in your terminal.  
+- 🧑‍💻 **Developers**: Browse or compare projects with context in your terminal.  
 - 🗄️ **Archival**: Serialize project state for reproducibility.  
 
-Yggdrasil doesn’t just *list files* — it builds a **codex of your project**.  
+Yggdrasil doesn’t just *list files* — it builds a **codex of your project**, and now shows how files evolve.  
 
 ---
 
 ## 🛠 How does it work?
 
-Yggdrasil generates two sections:  
+Yggdrasil generates two kinds of outputs:
 
-1. **Files** — index of all discovered paths.  
-2. **File Contents** — full file text, wrapped in markers.  
+1. **Snapshot Mode** — index + file contents.  
+2. **Diff Mode** — compares two sets of files, showing inline diffs *and* cross-file `[MOVED]` metadata.
 
-### Example commands
+### Snapshot Examples
 
 ```bash
 # Export your repo as Markdown (index + contents)
@@ -54,19 +55,19 @@ ygg --show --md --contents --out SHOW.md
 # List only file paths (no contents)
 ygg --show rs
 ygg --show py
-ygg --show json --ignore node_modules .next
+````
 
-# Restrict scan to a subdir
-ygg --show md --only src
+### Diff Examples
 
-# Exclude files listed in BLACK.md
-ygg --show --blacklist BLACK.md --contents
+```bash
+# Compare two versions of a controller
+ygg diff controller.py -- controller_old.py
 
-# Show only files listed in a manifest (WHITE.md)
-ygg --show --manifest WHITE.md --contents
+# Compare multiple files against a single snapshot
+ygg diff controller.py updates sampling trainer.py -- controller_old.py
 
-# Pipe into another tool (AI, pager, etc.)
-ygg --show --md --contents | less
+# Align tags neatly at a column
+ygg diff --align-tags src/ -- old_src/
 ```
 
 ---
@@ -115,26 +116,35 @@ cargo install --path . --force
 ## 🌲 Philosophy
 
 In Norse myth, **Yggdrasil** is the world-tree connecting all realms.
-In your terminal, Yggdrasil connects all files — flattening complexity into a single codex.
+In your terminal, Yggdrasil connects all files — flattening complexity into a single codex, and now diffing branches of your code-tree.
 
 It’s built to be:
 
 * **Minimal**: no configs, just flags.
 * **Readable**: AI-friendly and human-friendly.
-* **Extensible**: Markdown, CLI, ignore lists, output redirection.
+* **Extensible**: Markdown, CLI, diff formatters, ignore lists, output redirection.
 
 Goal: Make your project’s structure **transparent and portable**.
 
 ---
 
-## 🛣 Roadmap (v0.1 → v1.0)
+## 🛣 Roadmap
+
+### v0.1 → v0.2
 
 * ✅ Index & contents export (`--show`, `--contents`)
 * ✅ Markdown mode (`--md`)
 * ✅ Ignore & blacklist support (`--ignore`, `--blacklist`)
 * ✅ Output to file (`--out`)
+* ✅ Cross-file diff engine (`ygg diff`)
+* ✅ `[MOVED]` metadata overlay
+* ✅ `--align-tags` flag
+
+### Future (v0.3 → v1.0)
+
 * ⏳ Tree vs flat mode toggle
 * ⏳ Configurable themes / styles
+* ⏳ Unified codex+diff export
 
 ---
 

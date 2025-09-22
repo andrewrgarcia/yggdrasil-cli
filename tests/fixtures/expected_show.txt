@@ -6,11 +6,13 @@ Schema: index first, then file contents.
 - Contents are shown with markers <<< FILE START: <path> >>> … <<< FILE END: <path> >>>
 
 📄 Files
-📄 ./src/formatter.rs  
-📄 ./src/scanner.rs    
-📄 ./src/args.rs       
-📄 ./src/main.rs       
-📄 ./src/types.rs      
+📄 ./src/formatter_diff.rs  
+📄 ./src/formatter.rs       
+📄 ./src/scanner.rs         
+📄 ./src/args.rs            
+📄 ./src/main.rs            
+📄 ./src/types.rs           
+📄 ./src/diff.rs            
 
 ===============================================
 📑 File Contents

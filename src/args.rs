@@ -20,13 +20,15 @@ pub struct Cli {
 pub enum Commands {
     /// Compare two sets of files (original vs modified)
     Diff {
-        /// First set of files (before `--`)
-        #[arg(required = true, num_args = 1.., value_delimiter = ' ')]
+        /// Source files or directories
+        #[arg(required = true)]
         from: Vec<String>,
-
-        /// Second set of files (after `--`)
-        #[arg(required = true, num_args = 1.., last = true)]
+        /// Target files or directories
+        #[arg(required = true)]
         to: Vec<String>,
+        /// Align diff tags to a fixed column
+        #[arg(long)]
+        align_tags: bool,
     },
 }
 
@@ -72,4 +74,8 @@ pub struct Args {
     /// Write output to file instead of stdout
     #[arg(long)]
     pub out: Option<String>,
+
+    #[arg(long)]
+    pub align_tags: bool, 
+
 }
