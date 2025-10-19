@@ -1,6 +1,6 @@
 [package]
 name = "yggdrasil-cli"
-version = "0.2.0"
+version = "0.2.1"
 edition = "2021"
 description = "The god-tree of your codebase — flatten projects into an AI-ready codex."
 license = "MIT"

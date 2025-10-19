@@ -63,13 +63,14 @@ pub struct Args {
     #[arg(long, num_args = 1.., value_delimiter = ' ')]
     pub ignore: Vec<String>,
 
-    /// Load blacklist patterns from a file (like .gitignore)
-    #[arg(long)]
-    pub blacklist: Option<String>,
+    /// Load blacklist patterns (like .gitignore) or enter manually.
+    #[arg(long, alias = "blacklist", num_args = 0..=1)]
+    pub black: Option<Option<String>>,
 
-    /// Load manifest (explicit file list to show)
-    #[arg(long)]
-    pub manifest: Option<String>,
+    /// Load manifest (explicit file list to show) or enter manually.
+    #[arg(long, alias = "manifest", num_args = 0..=1)]
+    pub white: Option<Option<String>>,
+
 
     /// Write output to file instead of stdout
     #[arg(long)]

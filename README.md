@@ -22,7 +22,8 @@ Think of it as **`tree` + `cat` + `diff`**, but with superpowers:
 - 📑 **Contents** → full text for each file, neatly marked.  
 - 🔗 **Anchors** → clickable links from index → content (Markdown mode).  
 - 🎨 **Stylish CLI** → cyberpunk colors, or plain mode for piping.  
-- 🛡 **Controls** → `--only`, `--ignore`, `--blacklist`, `--out`.  
+- 🛡 **Controls** → `--only`, `--ignore`, `--black`, `--white`, `--out`.  
+  ↪ `--black` / `--white` accept either a **file path** *or* launch an **interactive paste mode** — perfect for dropping in VS Code’s *Copy Relative Path* output.  
 - 🧩 **Diff Mode** → cross-file block detection with `[MOVED]` annotations.  
 - 📐 **Align Tags** → `--align-tags` keeps metadata comments lined up.  
 
@@ -90,8 +91,42 @@ src/types/codebase.ts
 Run with:
 
 ```bash
-ygg --show --manifest WHITE.md --contents
+ygg --show --white WHITE.md --contents
 ```
+
+---
+
+## ✍️ Interactive Lists (VS Code paste mode)
+
+You don’t even need a manifest file.
+Run:
+
+```bash
+ygg --black
+```
+
+or
+
+```bash
+ygg --white
+```
+
+Then paste your paths — for example, directly from **VS Code → Right-click → Copy Relative Path** —
+and finish with:
+
+* **Ctrl + D** (Linux/macOS)
+* **Ctrl + Z**, then **Enter** (Windows)
+
+Example:
+
+```
+src/main.rs
+src/utils/io.rs
+README.md
+```
+
+Each line becomes a filter pattern — instantly usable as a manifest (`--white`) or ignore list (`--black`).
+Perfect for ad-hoc flattening or focused diffs when working on multiple files at once.
 
 ---
 
@@ -134,11 +169,13 @@ Goal: Make your project’s structure **transparent and portable**.
 
 * ✅ Index & contents export (`--show`, `--contents`)
 * ✅ Markdown mode (`--md`)
-* ✅ Ignore & blacklist support (`--ignore`, `--blacklist`)
+* ✅ Ignore & blacklist support (`--ignore`, `--black`)
+* ✅ Manifest inclusion (`--white`)
 * ✅ Output to file (`--out`)
 * ✅ Cross-file diff engine (`ygg diff`)
 * ✅ `[MOVED]` metadata overlay
 * ✅ `--align-tags` flag
+* ✅ Interactive `--black` / `--white` paste mode
 
 ### Future (v0.3 → v1.0)
 

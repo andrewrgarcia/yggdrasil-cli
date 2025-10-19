@@ -1,6 +1,34 @@
 use walkdir::WalkDir;
 use glob::Pattern;
 use crate::{args::Args, types::FileEntry};
+use std::io::{self, Read};
+
+
+pub fn read_multiline_stdin(prompt: &str) -> Option<Vec<String>> {
+    use colored::Colorize;
+    println!("{}", prompt.white());
+    println!("{}", "💡 Tip: You can paste multiple file paths copied from VS Code (Right-Click → Copy Relative Path).".white());
+    println!("{}", "↪ Finish with Ctrl+D (Linux/macOS) or Ctrl+Z then Enter (Windows).".white());
+    println!("{}", "↪ Press Ctrl+C to cancel.".white());
+    println!();
+
+    let mut buffer = String::new();
+    io::stdin().read_to_string(&mut buffer).ok()?;
+    let trimmed = buffer.trim();
+    if trimmed.is_empty() {
+        println!("⚠️ No content provided. Aborting.");
+        None
+    } else {
+        Some(
+            trimmed
+                .lines()
+                .map(str::trim)
+                .filter(|l| !l.is_empty() && !l.starts_with('#'))
+                .map(String::from)
+                .collect(),
+        )
+    }
+}
 
 
 pub fn load_patterns_file(path: &str) -> Vec<String> { 
@@ -41,14 +69,34 @@ fn count_lines(path: &str) -> usize {
 
 pub fn collect_files(args: &Args) -> Vec<FileEntry> {
     let mut ignore_patterns = args.ignore.clone();
-    if let Some(file) = &args.blacklist {
-        ignore_patterns.extend(load_patterns_file(file));
-        ignore_patterns.push(file.clone());
+    let mut only_patterns = args.only.clone();
+
+    // --- Handle black (ignore) patterns ---
+    if let Some(black_opt) = &args.black {
+        match black_opt {
+            Some(file) => {
+                ignore_patterns.extend(load_patterns_file(file));
+            }
+            None => {
+                if let Some(patterns) = read_multiline_stdin("Enter BLACK patterns (one per line):") {
+                    ignore_patterns.extend(patterns);
+                }
+            }
+        }
     }
 
-    let mut only_patterns = args.only.clone();
-    if let Some(file) = &args.manifest {
-        only_patterns.extend(load_patterns_file(file));
+    // --- Handle white (manifest) patterns ---
+    if let Some(white_opt) = &args.white {
+        match white_opt {
+            Some(file) => {
+                only_patterns.extend(load_patterns_file(file));
+            }
+            None => {
+                if let Some(patterns) = read_multiline_stdin("Enter WHITE patterns (one per line):") {
+                    only_patterns.extend(patterns);
+                }
+            }
+        }
     }
 
     let mut files = Vec::new();

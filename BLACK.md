@@ -1,5 +1,5 @@
 # My BLACK.md™ Blacklist
-## dont show these files on `ygg show` (usage: ygg --show --blacklist BLACK.md)
+## dont show these files on `ygg show` (usage: ygg --show --black BLACK.md)
 
 .git
 target
@@ -10,7 +10,7 @@ Cargo.toml
 
 *.zip
 
-# manifest list
+# manifest / whitelist
 WHITE.md
 
 # contents output
