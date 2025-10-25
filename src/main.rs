@@ -49,7 +49,24 @@ fn main() {
             run_diff(from, to, align_tags);
         }
         None => {
-            let args = cli.args;
+            // Make mutable so we can adjust via --whited
+            let mut args = cli.args;
+
+            // --- Handle --whited shortcut ---
+            if let Some(whited_opt) = &args.whited {
+                args.white = Some(None);
+                args.contents = true;
+
+                // if user provided a name (e.g. OK.md), use it directly
+                let out_name = match whited_opt {
+                    Some(name) => name.to_string(),
+                    None => "SHOW.md".to_string(),
+                };
+
+                args.out = Some(out_name);
+            }
+
+
             let root = args.dir.clone();
 
             // Choose output destination

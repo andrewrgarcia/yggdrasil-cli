@@ -32,7 +32,6 @@ pub enum Commands {
     },
 }
 
-// Your existing Args struct remains unchanged
 #[derive(clap::Args, Debug)]
 pub struct Args {
     /// Root directory to scan
@@ -71,12 +70,16 @@ pub struct Args {
     #[arg(long, alias = "manifest", num_args = 0..=1)]
     pub white: Option<Option<String>>,
 
+    /// Shortcut for `--white --contents --out SHOW.md[/NAME.md]`
+    /// Example: `ygg --whited summary.md`
+    #[arg(long, num_args = 0..=1)]
+    pub whited: Option<Option<String>>,
 
     /// Write output to file instead of stdout
     #[arg(long)]
     pub out: Option<String>,
 
+    /// Align diff tags to a fixed column
     #[arg(long)]
     pub align_tags: bool, 
-
 }
