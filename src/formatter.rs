@@ -11,6 +11,7 @@ pub trait OutputFormatter {
 }
 
 /// Markdown-style formatter
+#[allow(dead_code)]
 pub struct MarkdownFormatter {
     pub show_lines: bool,
 }
