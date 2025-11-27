@@ -6,118 +6,154 @@
 <h1 align="center"> Yggdrasil</h1>
 <p align="center">
   <strong>The god-tree of your codebase</strong><br/>
-Flatten your entire project into an AI-ready codex — index + contents, in one command.
+Flatten any subset of your project into an AI-ready codex — index + contents, in one command.
 </p>
 
 ---
+# What is Yggdrasil?
 
-## 🤔 What is Yggdrasil?
+Yggdrasil is a **project flattener and diff engine**.
+It builds a single, deterministic codex from whatever subset of your codebase you choose:
 
-Yggdrasil CLI is a **project flattener and diff tool**:  
-it takes your codebase and transforms it into a single, structured document — or compares snapshots with rich, annotated diffs.  
+* A full index of files
+* Accurate line counts
+* Language-tagged code blocks
+* Markdown or plain text output
+* Optional rich diff mode
+* Optional movement annotations (`[MOVED]`)
 
-Think of it as **`tree` + `cat` + `diff`**, but with superpowers:
+Use it for:
 
-- 📂 **Files** → indexed, filtered by extension, glob, or blacklist.  
-- 📑 **Contents** → full text for each file, neatly marked.  
-- 🔗 **Anchors** → clickable links from index → content (Markdown mode).  
-- 🎨 **Stylish CLI** → cyberpunk colors, or plain mode for piping.  
-- 🛡 **Controls** → `--only`, `--ignore`, `--black`, `--white`, `--out`.  
-  ↪ `--black` / `--white` accept either a **file path** *or* launch an **interactive paste mode** — perfect for dropping in VS Code’s *Copy Relative Path* output.  
-- 🧩 **Diff Mode** → cross-file block detection with `[MOVED]` annotations.  
-- 📐 **Align Tags** → `--align-tags` keeps metadata comments lined up.  
+* LLM prompts
+* Documentation snapshots
+* Code reviews
+* Reproducible archives
+* Project comparisons
 
----
-
-## 🌟 Why would I want this?
-
-- 🤖 **AI Prompts**: Feed your repo or a diff as one codex to ChatGPT/Claude.  
-- 📚 **Docs & Reviews**: Export a clean snapshot for collaborators.  
-- 🧑‍💻 **Developers**: Browse or compare projects with context in your terminal.  
-- 🗄️ **Archival**: Serialize project state for reproducibility.  
-
-Yggdrasil doesn’t just *list files* — it builds a **codex of your project**, and now shows how files evolve.  
+Yggdrasil does not guess what you want.
+You explicitly choose the files — this makes your snapshot deterministic and deeply controllable.
 
 ---
 
-## 🛠 How does it work?
+# How Yggdrasil Selects Files (Critical)
 
-Yggdrasil generates two kinds of outputs:
+Yggdrasil **never prints the entire repo by default**.
+You must specify *what* to include using any of:
 
-1. **Snapshot Mode** — index + file contents.  
-2. **Diff Mode** — compares two sets of files, showing inline diffs *and* cross-file `[MOVED]` metadata.
+* `--only <paths…>`
+* `--show <extensions…>`
+* `--white <manifest>`
 
-### Snapshot Examples
+You may also exclude using:
+
+* `--ignore`
+* `--black`
+
+Formatting is separate:
+
+* `--printed` → Markdown (`SHOW.md` by default)
+* `--contents --out FILE` → explicit output mode
+
+**`--printed` does not select files.**
+It only specifies the output format.
+
+---
+
+# Snapshot Examples
+
+These examples are accurate and guaranteed to work because they always include a file-selection flag.
+
+## Export all `.rs` and `.md` files as Markdown
 
 ```bash
-# Export your repo as Markdown (index + contents)
-ygg --show --md --contents --out SHOW.md
+ygg --show rs md --printed
+```
 
-# List only file paths (no contents)
+## Export specific files and directories
+
+```bash
+ygg --only src/main.rs \
+        src/scanner \
+        src/snapshot/format_selection.rs \
+        src/snapshot/writer.rs \
+    --printed
+```
+
+## Export files listed in a manifest
+
+`WHITE.md`:
+
+```
+src/lib/model.rs
+src/app/main.tsx
+README.md
+```
+
+Command:
+
+```bash
+ygg --white WHITE.md --printed
+```
+
+## Use explicit `--contents --out`
+
+Markdown:
+
+```bash
+ygg --show py --contents --out PY_SNAPSHOT.md
+```
+
+Plain text:
+
+```bash
+ygg --show rs --contents --out snapshot.txt
+```
+
+## List file paths without contents
+
+```bash
 ygg --show rs
-ygg --show py
+ygg --show py md txt
 ```
 
-### Diff Examples
+## Flatten everything under a directory
 
 ```bash
-# Compare two versions of a controller
-ygg diff controller.py -- controller_old.py
-
-# Compare multiple files against a single snapshot
-ygg diff controller.py updates sampling trainer.py -- controller_old.py
-
-# Align tags neatly at a column
-ygg diff --align-tags src/ -- old_src/
+ygg --only src --printed
 ```
 
 ---
 
-## 📄 Manifest files
+# Interactive Mode
 
-A manifest is just a plain text file with **one path per line**.
-Only the files listed in the manifest will be shown.
+### **Interactive paste mode is ONLY triggered by `--whited`.**
 
-Example `WHITE.md`:
+`--white` never triggers interactive input.
 
-```
-src/pages/codebase.tsx
-src/data/codebaseAssets.tsx
-src/i18n/codebase.en.json
-src/i18n/codebase.es.json
-src/types/codebase.ts
-```
+## The `--whited` Shortcut (Interactive)
 
-Run with:
+`--whited` enables the fastest workflow:
 
-```bash
-ygg --show --white WHITE.md --contents
-```
+* launches interactive paste mode
+* implies `--white`
+* implies `--contents`
+* writes **Markdown** to `SHOW.md` automatically
 
----
-
-## ✍️ Interactive Lists (VS Code paste mode)
-
-You don’t even need a manifest file.
 Run:
 
 ```bash
-ygg --black
+ygg --whited
 ```
 
-or
+You will see:
 
-```bash
-ygg --white
+```
+Enter WHITE patterns (one per line):
+Tip: Paste your paths (e.g., from VS Code → Copy Relative Path).
+Finish with Ctrl+D (Linux/macOS) or Ctrl+Z then Enter (Windows).
 ```
 
-Then paste your paths — for example, directly from **VS Code → Right-click → Copy Relative Path** —
-and finish with:
-
-* **Ctrl + D** (Linux/macOS)
-* **Ctrl + Z**, then **Enter** (Windows)
-
-Example:
+Paste:
 
 ```
 src/main.rs
@@ -125,22 +161,53 @@ src/utils/io.rs
 README.md
 ```
 
-Each line becomes a filter pattern — instantly usable as a manifest (`--white`) or ignore list (`--black`).
-Perfect for ad-hoc flattening or focused diffs when working on multiple files at once.
+Then Yggdrasil generates `SHOW.md` automatically.
+
+This is the only flag that triggers interactive paste mode.
 
 ---
 
-## 🚀 Installation
+# Diff Mode
 
-You’ll need [Rust](https://www.rust-lang.org/tools/install).
+Compare directories:
+
+```bash
+ygg diff src/ -- old_src/
+```
+
+Compare specific files:
+
+```bash
+ygg diff controller.py -- controller_old.py
+```
+
+Align annotations:
+
+```bash
+ygg diff --align-tags src/ -- old_src/
+```
+
+Diff features:
+
+* inline diff visualization
+* contextual additions/removals
+* cross-file movement detection
+* `[MOVED → file:line]` annotations
+* optional aligned metadata
+
+---
+
+# Installation
+
+Requires Rust:
 
 ```bash
 cargo install yggdrasil-cli
 ```
 
-Then ensure `~/.cargo/bin` is in your `PATH`.
+Ensure `~/.cargo/bin` is in your path.
 
-Upgrade after edits:
+Install from local source:
 
 ```bash
 cargo install --path . --force
@@ -148,43 +215,44 @@ cargo install --path . --force
 
 ---
 
-## 🌲 Philosophy
+# Philosophy
 
-In Norse myth, **Yggdrasil** is the world-tree connecting all realms.
-In your terminal, Yggdrasil connects all files — flattening complexity into a single codex, and now diffing branches of your code-tree.
+In Norse myth, Yggdrasil is the world-tree unifying realms.
+This tool unifies your project structure into one portable artifact.
 
-It’s built to be:
+Design principles:
 
-* **Minimal**: no configs, just flags.
-* **Readable**: AI-friendly and human-friendly.
-* **Extensible**: Markdown, CLI, diff formatters, ignore lists, output redirection.
-
-Goal: Make your project’s structure **transparent and portable**.
-
----
-
-## 🛣 Roadmap
-
-### v0.1 → v0.2
-
-* ✅ Index & contents export (`--show`, `--contents`)
-* ✅ Markdown mode (`--md`)
-* ✅ Ignore & blacklist support (`--ignore`, `--black`)
-* ✅ Manifest inclusion (`--white`)
-* ✅ Output to file (`--out`)
-* ✅ Cross-file diff engine (`ygg diff`)
-* ✅ `[MOVED]` metadata overlay
-* ✅ `--align-tags` flag
-* ✅ Interactive `--black` / `--white` paste mode
-
-### Future (v0.3 → v1.0)
-
-* ⏳ Tree vs flat mode toggle
-* ⏳ Configurable themes / styles
-* ⏳ Unified codex+diff export
+* Explicit over implicit
+* Deterministic, repeatable output
+* Minimal configuration
+* LLM-friendly structure
+* Complete control over what’s included
 
 ---
 
-## 📜 License
+# Roadmap
 
-MIT, like almost everything else that’s friendly and open-source.
+### Completed (v0.2.4)
+
+* Snapshot export
+* Markdown and plain-text modes
+* Manifests: `--white` and interactive `--whited`
+* Blacklists: `--ignore`, `--black`
+* `--only` and `--show` filters
+* Diff engine
+* Block movement detection
+* `--align-tags`
+* `--printed`
+
+### Planned (v0.3 → v1.0)
+
+* Tree-view / flat-view toggle
+* Themeable CLI output
+* HTML codex export
+* Combined codex+diff bundles
+
+---
+
+# License
+
+MIT License.

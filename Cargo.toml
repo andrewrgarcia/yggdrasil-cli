@@ -2,12 +2,27 @@
 name = "yggdrasil-cli"
 version = "0.2.4"
 edition = "2021"
-description = "The god-tree of your codebase — flatten projects into an AI-ready codex."
+
+description = "Yggdrasil is a project flattener and diff engine that turns any subset of your codebase into a single AI-ready codex (index + contents), or compares snapshots with annotated diffs."
+
 license = "MIT"
 repository = "https://github.com/andrewrgarcia/yggdrasil-cli"
+homepage = "https://github.com/andrewrgarcia/yggdrasil-cli"
+documentation = "https://github.com/andrewrgarcia/yggdrasil-cli"
 readme = "README.md"
-keywords = ["cli", "documentation", "ai", "code", "codex"]
-categories = ["command-line-utilities", "development-tools"]
+
+keywords = [
+    "cli", "documentation", "ai", "codex", "snapshot",
+    "diff", "analysis", "markdown"
+]
+
+categories = [
+    "command-line-utilities",
+    "development-tools",
+    "text-processing"
+]
+
+authors = ["Andrew R. Garcia"]
 
 [dependencies]
 clap = { version = "4.5", features = ["derive"] }
