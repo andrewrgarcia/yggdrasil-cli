@@ -86,6 +86,11 @@ pub struct Args {
     #[arg(long, num_args = 0..=1)]
     pub whited: Option<Option<String>>,
 
+    /// Shortcut for `--contents --out SHOW.md`
+    /// Example: `ygg printed` or `ygg printed MyFile.md`
+    #[arg(long, short = 'p', num_args = 0..=1)]
+    pub printed: Option<Option<String>>,
+
     /// Write output to file instead of stdout
     #[arg(long)]
     pub out: Option<String>,
