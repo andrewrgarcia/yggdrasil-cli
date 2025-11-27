@@ -1,3 +1,4 @@
+pub mod traits;
 pub mod markdown;
 pub mod cli;
 pub mod diff;

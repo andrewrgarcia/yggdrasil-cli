@@ -1,6 +1,6 @@
 use std::io::Write;
-use crate::types::FileEntry;
-use crate::types::GroupedMatches;
+
+use crate::types::{FileEntry, GroupedMatches};
 
 pub trait OutputFormatter {
     fn print_preamble(&self, root: &str, out: &mut dyn Write);

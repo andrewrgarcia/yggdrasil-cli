@@ -1,10 +1,9 @@
 use std::fs;
 use std::io::Write;
 use colored::*;
-use atty::Stream;
 
 use crate::types::GroupedMatches;
-use super::super::super::formatter_diff::DiffFormatter;
+use crate::formatters::traits::DiffFormatter;
 
 pub struct DiffCliFormatter {
     pub colored: bool,

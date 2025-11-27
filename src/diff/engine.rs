@@ -3,7 +3,7 @@ use std::collections::HashSet;
 
 use atty::Stream;
 
-use crate::formatter_diff::{DiffFormatter};
+use crate::formatters::traits::{DiffFormatter};
 use crate::formatters::diff::{DiffCliFormatter, DiffMarkdownFormatter};
 
 use super::expand::expand_paths;

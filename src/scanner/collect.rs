@@ -1,7 +1,6 @@
 use walkdir::WalkDir;
-use glob::Pattern;
 
-use crate::args::Args;
+use crate::cli::Args;
 use crate::types::FileEntry;
 
 use super::stdin::read_multiline_stdin;

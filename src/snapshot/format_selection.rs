@@ -1,11 +1,11 @@
-use crate::args::Args;
-use crate::formatters::output::{CliFormatter, MarkdownFormatter};
+use crate::cli::Args;
+use crate::formatters::{CliFormatter, MarkdownFormatter};
+
 use crate::formatters::traits::OutputFormatter;
 use atty::Stream;
 
 pub fn select_formatter<'a>(
     args: &Args,
-    _writer: &'a Box<dyn std::io::Write>,
 ) -> Box<dyn OutputFormatter + 'a> {
 
     let use_md = if let Some(out_file) = &args.out {

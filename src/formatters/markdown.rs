@@ -3,10 +3,10 @@ use std::io::Write;
 use std::time::{SystemTime, UNIX_EPOCH};
 
 use crate::types::FileEntry;
-use colored::*;
 
-use super::super::formatter::OutputFormatter; // we’ll move this trait later
+use super::traits::OutputFormatter;
 
+#[allow(dead_code)]
 pub struct MarkdownFormatter {
     pub show_lines: bool,
 }
@@ -78,6 +78,45 @@ impl OutputFormatter for MarkdownFormatter {
 
             writeln!(out, "```\n</file>\n").unwrap();
         }
+    }
+}
+
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::types::FileEntry;
+
+    fn sample_files() -> Vec<FileEntry> {
+        vec![
+            FileEntry { path: "src/main.rs".into(), line_count: 10 },
+            FileEntry { path: "src/formatter.rs".into(), line_count: 5 },
+        ]
+    }
+
+    #[test]
+    fn test_markdown_preamble() {
+        let mut buf = Vec::new();
+        let fmt = MarkdownFormatter { show_lines: false };
+        fmt.print_preamble(".", &mut buf);
+        let out = String::from_utf8(buf).unwrap();
+
+        assert!(out.contains("# CODEX"));
+        assert!(out.contains("project_path:"));
+        assert!(out.contains("timestamp_unix:"));
+        assert!(out.contains("## INDEX"));
+    }
+
+    #[test]
+    fn test_markdown_index_lists_files() {
+        let mut buf = Vec::new();
+        let fmt = MarkdownFormatter { show_lines: false };
+        fmt.print_index(&sample_files(), &mut buf);
+        let out = String::from_utf8(buf).unwrap();
+
+        assert!(out.contains("src/main.rs"));
+        assert!(out.contains("src/formatter.rs"));
+        assert!(out.contains("total_loc: 15"));
     }
 }
 

@@ -8,7 +8,10 @@ pub fn group_and_filter_matches(
     matches: Vec<BlockMatch>,
     from_files: &[(String, String)],
 ) -> Vec<GroupedMatches> {
-    let mut grouped = std::collections::BTreeMap::new();
+    let mut grouped: std::collections::BTreeMap<
+        (String, String),
+        Vec<BlockWithVote>
+    > = std::collections::BTreeMap::new();
 
     // Map file → lines
     let mut file_lines = HashMap::new();

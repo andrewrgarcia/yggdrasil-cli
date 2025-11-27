@@ -96,6 +96,11 @@ pub struct Args {
 }
 
 
+pub mod cli {
+    pub use super::{Cli, Args, Commands};
+}
+
+
 fn main() {
     let cli = Cli::parse();
 

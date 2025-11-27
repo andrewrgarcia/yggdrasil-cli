@@ -26,9 +26,10 @@ fn test_markdown_output_to_file() {
         .success();
 
     let contents = fs::read_to_string(&outfile).unwrap();
-    assert!(contents.contains("# ✨ Project Snapshot"));
-    assert!(contents.contains("## 📄 Files"));
-    assert!(contents.contains("## 📑 File Contents"));
+    assert!(contents.contains("# CODEX"));
+    assert!(contents.contains("generated_by: yggdrasil-cli"));
+    assert!(contents.contains("format: markdown"));
+
 }
 
 #[test]

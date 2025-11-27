@@ -4,7 +4,7 @@ use crate::types::GroupedMatches;
 
 pub struct DiffMarkdownFormatter;
 
-impl super::super::super::formatter_diff::DiffFormatter for DiffMarkdownFormatter {
+impl crate::formatters::traits::DiffFormatter for DiffMarkdownFormatter {
     fn print_preamble(&self, out: &mut dyn Write) {
         writeln!(out, "# 📦 Cross-file Diff Report\n").unwrap();
     }
