@@ -12,8 +12,11 @@ documentation = "https://github.com/andrewrgarcia/yggdrasil-cli"
 readme = "README.md"
 
 keywords = [
-    "cli", "documentation", "ai", "codex", "snapshot",
-    "diff", "analysis", "markdown"
+    "cli",
+    "diff",
+    "documentation",
+    "snapshot",
+    "markdown"
 ]
 
 categories = [
