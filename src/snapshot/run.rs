@@ -1,0 +1,29 @@
+// Orchestrates the snapshot pipeline (index + contents)
+
+use crate::args::Args;
+use crate::formatters::traits::OutputFormatter;
+use crate::scanner::collect_files;
+use crate::snapshot::filelist::prepare_file_list;
+use crate::snapshot::writer::open_writer;
+use crate::snapshot::format_selection::select_formatter;
+
+pub fn run_snapshot(args: Args) {
+    let root = args.dir.clone();
+    let mut writer = open_writer(&args);
+
+    // collect files from scanner
+    let files = collect_files(&args);
+
+    // allow snapshot to transform / reorder entries later
+    let prepared = prepare_file_list(files);
+
+    // choose CLI or Markdown
+    let fmt = select_formatter(&args, &writer);
+
+    fmt.print_preamble(&root, &mut *writer);
+    fmt.print_index(&prepared, &mut *writer);
+
+    if args.contents {
+        fmt.print_contents(&prepared, &mut *writer);
+    }
+}
