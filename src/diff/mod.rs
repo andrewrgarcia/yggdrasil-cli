@@ -1,6 +1,10 @@
 pub mod engine;
-pub mod grouping;
 pub mod expand;
-pub mod printing;
+pub mod matcher;
+pub mod structural;
+pub mod block_hash;
+pub mod crossfile;
+pub mod inline;
 
-pub use printing::run_diff;
+pub use engine::run_diff;
+
