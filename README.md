@@ -124,6 +124,33 @@ ygg --only src --printed
 
 ---
 
+# Large Codices & Context Limits
+
+Yggdrasil can split large codices into **LLM-safe shards** while preserving structure.
+
+Use `--split` to divide output into multiple standalone codex files:
+
+```bash
+ygg --only <...> --printed --split
+ygg --only <...> --printed --split 8
+ygg --white <WHITE.md> --printed --split 10
+ygg --whited --split 
+ygg --whited --split 30
+```
+
+Each shard:
+
+* preserves canonical file order
+* never breaks files mid-content
+* includes full INDEX + FILES structure
+* is independently valid for AI ingestion
+
+Splitting is expressed in **thousands of tokens**, not raw token counts.
+
+This allows large projects to pass through constrained context windows intact — piece by piece.
+
+---
+
 # Interactive Mode
 
 ### **Interactive paste mode is ONLY triggered by `--whited`.**
