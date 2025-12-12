@@ -1,6 +1,6 @@
 [package]
 name = "yggdrasil-cli"
-version = "0.2.5"
+version = "0.3.0"
 edition = "2021"
 
 description = "Yggdrasil is a project flattener and diff engine that turns any subset of your codebase into a single AI-ready codex (index + contents), or compares snapshots with annotated diffs."

@@ -91,6 +91,10 @@ pub struct Args {
     #[arg(long, short = 'p', num_args = 0..=1)]
     pub printed: Option<Option<String>>,
 
+    /// Split output into token-bounded packets (K = thousands, default 32)
+    #[arg(long, num_args = 0..=1, value_name = "K")]
+    pub split: Option<Option<usize>>,
+
     /// Write output to file instead of stdout
     #[arg(long)]
     pub out: Option<String>,
