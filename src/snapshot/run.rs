@@ -9,23 +9,30 @@ use std::fs::File;
 use std::io::Write;
 
 /// Inject FUR-style stats into the markdown buffer
-fn finalize_markdown(buf: &[u8], out_path: &str) {
+fn finalize_markdown(buf: &[u8], out_path: &str, shard_idx: Option<(usize, usize)>) {
     let text = String::from_utf8_lossy(buf);
 
     let word_count = text.split_whitespace().count();
-    let token_est = ((word_count as f32) * (1.33)).round() as usize;
+    let token_est = ((word_count as f32) * 1.33).round() as usize;
 
-    // Insert stats *above* INDEX
+    let shard_line = shard_idx.map(|(i, total)| {
+        format!("> 🔹 SHARD {} / {}\n", i, total)
+    }).unwrap_or_default();
+
     let inject = format!(
-        "> ✍️ Words: {}\n> 🪙 Tokens (est.): {}\n\n## INDEX",
-        word_count, token_est
+        "{}> ✍️ Words: {}\n> 🪙 Tokens (est.): {}\n\n## INDEX",
+        shard_line,
+        word_count,
+        token_est
     );
 
     let final_text = text.replacen("## INDEX", &inject, 1);
 
-    let mut file = File::create(out_path).expect("Failed to write final markdown file");
+    let mut file = File::create(out_path)
+        .expect("Failed to write final markdown file");
     file.write_all(final_text.as_bytes()).unwrap();
 }
+
 
 /// Run the project snapshot (default command)
 pub fn run_snapshot(mut args: Args) {
@@ -96,6 +103,9 @@ pub fn run_snapshot(mut args: Args) {
 
                 let base = args.out.as_ref().unwrap().trim_end_matches(".md");
 
+                
+                let total = packets.len();
+
                 for (i, packet) in packets.iter().enumerate() {
                     let mut local_buf = Vec::new();
 
@@ -106,8 +116,9 @@ pub fn run_snapshot(mut args: Args) {
                         fmt.print_contents(packet, &mut local_buf);
                     }
 
-                    let out_path = format!("{}.part{:02}.md", base, i + 1);
-                    finalize_markdown(&local_buf, &out_path);
+                    let out_path = format!("{}.shard{:02}.md", base, i + 1);
+
+                    finalize_markdown(&local_buf, &out_path, Some((i + 1, total)));
                 }
             } else {
                 // original behavior
@@ -119,7 +130,7 @@ pub fn run_snapshot(mut args: Args) {
                 }
 
                 let out_path = args.out.as_ref().unwrap();
-                finalize_markdown(buf.as_slice(), out_path);
+                finalize_markdown(buf.as_slice(), out_path, None);                
             }
         }
 
