@@ -37,11 +37,69 @@ impl OutputFormatter for MarkdownFormatter {
     }
 
     fn print_index(&self, files: &Vec<FileEntry>, out: &mut dyn Write) {
+
         let mut total_lines = 0usize;
+
+        let header = "path";
+
+        let path_width = files
+            .iter()
+            .map(|f| f.path.len())
+            .max()
+            .unwrap_or(0)
+            .max(header.len());
+
+        let line_width = files
+            .iter()
+            .map(|f| f.line_count.to_string().len())
+            .max()
+            .unwrap_or(1);
+
+        let word_width = files
+            .iter()
+            .map(|f| f.word_count.to_string().len())
+            .max()
+            .unwrap_or(1);
+
+        let token_width = files
+            .iter()
+            .map(|f| f.token_est.to_string().len())
+            .max()
+            .unwrap_or(1);
+
+        writeln!(
+            out,
+            "{:<path_w$} : {:>line_w$} | {:>word_w$} | {:>token_w$}",
+            "path",
+            "lines",
+            "words",
+            "tokens",
+            path_w = path_width,
+            line_w = line_width.max(5),
+            word_w = word_width.max(5),
+            token_w = token_width.max(6),
+        ).unwrap();
+
+        writeln!(out).unwrap();
+
         for entry in files {
+
             total_lines += entry.line_count;
-            writeln!(out, "{}: {}", entry.path, entry.line_count).unwrap();
+
+            writeln!(
+                out,
+                "{:<path_w$} : {:>line_w$} | {:>word_w$} | {:>token_w$}",
+                entry.path,
+                entry.line_count,
+                entry.word_count,
+                entry.token_est,
+                path_w = path_width,
+                line_w = line_width.max(5),
+                word_w = word_width.max(5),
+                token_w = token_width.max(6),
+            ).unwrap();
         }
+
         writeln!(out, "total_loc: {}\n", total_lines).unwrap();
         writeln!(out, "## FILES").unwrap();
     }
@@ -89,8 +147,18 @@ mod tests {
 
     fn sample_files() -> Vec<FileEntry> {
         vec![
-            FileEntry { path: "src/main.rs".into(), line_count: 10 },
-            FileEntry { path: "src/formatter.rs".into(), line_count: 5 },
+            FileEntry {
+                path: "src/main.rs".into(),
+                line_count: 10,
+                word_count: 20,
+                token_est: 27,
+            },
+            FileEntry {
+                path: "src/formatter.rs".into(),
+                line_count: 5,
+                word_count: 12,
+                token_est: 16,
+            }
         ]
     }
 

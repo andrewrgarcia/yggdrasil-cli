@@ -8,7 +8,6 @@ use super::traits::OutputFormatter;
 
 pub struct CliFormatter {
     pub colored: bool,
-    pub show_lines: bool,
 }
 
 impl OutputFormatter for CliFormatter {
@@ -39,75 +38,105 @@ impl OutputFormatter for CliFormatter {
     }
 
     fn print_index(&self, files: &Vec<FileEntry>, out: &mut dyn Write) {
-        let max_len = files.iter().map(|f| f.path.len()).max().unwrap_or(0);
+
+        let path_width = files
+        .iter()
+        .map(|f| f.path.len() + 2) // space + icon
+        .max()
+        .unwrap_or(0)
+        .max(4);
+
+        let line_width = files
+            .iter()
+            .map(|f| f.line_count.to_string().len())
+            .max()
+            .unwrap_or(1)
+            .max(5);
+
+        let word_width = files
+            .iter()
+            .map(|f| f.word_count.to_string().len())
+            .max()
+            .unwrap_or(1)
+            .max(5);
+
+        let token_width = files
+            .iter()
+            .map(|f| f.token_est.to_string().len())
+            .max()
+            .unwrap_or(1)
+            .max(6);
 
         if self.colored {
             writeln!(out, "{}", "📄 Files".bright_magenta().bold()).unwrap();
-            for entry in files {
-                let icon = "📄".truecolor(255, 255, 0);
-                let text = entry.path.truecolor(0, 255, 255);
-
-                if self.show_lines {
-                    writeln!(
-                        out,
-                        "{} {:<width$} {} lines",
-                        icon,
-                        text,
-                        entry.line_count,
-                        width = max_len + 2
-                    ).unwrap();
-                } else {
-                    writeln!(out, "{} {:<width$}", icon, text, width = max_len + 2).unwrap();
-                }
-            }
-
-            if self.show_lines {
-                let total_lines: usize = files.iter().map(|f| f.line_count).sum();
-                writeln!(out, "\n====").unwrap();
-                writeln!(
-                    out,
-                    "{:<width$} {} lines\n",
-                    "📦 Total LOC".bright_magenta().bold(),
-                    total_lines.to_string().bright_magenta().bold(),
-                    width = max_len + 2
-                ).unwrap();
-            }
-
-            writeln!(
-                out,
-                "\n{}",
-                "===============================================".truecolor(255, 255, 0)
-            ).unwrap();
-            writeln!(out, "{}", "📑 File Contents".bright_magenta().bold()).unwrap();
         } else {
             writeln!(out, "📄 Files").unwrap();
-            for entry in files {
-                if self.show_lines {
-                    writeln!(
-                        out,
-                        "📄 {:<width$} {} lines",
-                        entry.path,
-                        entry.line_count,
-                        width = max_len + 2
-                    ).unwrap();
-                } else {
-                    writeln!(out, "📄 {:<width$}", entry.path, width = max_len + 2).unwrap();
-                }
-            }
+        }
 
-            if self.show_lines {
-                let total_lines: usize = files.iter().map(|f| f.line_count).sum();
-                writeln!(out, "\n====").unwrap();
+        // header
+        writeln!(
+            out,
+            "{:<path_w$} : {:>line_w$} | {:>word_w$} | {:>token_w$}",
+            "path",
+            "lines",
+            "words",
+            "tokens",
+            path_w = path_width,
+            line_w = line_width,
+            word_w = word_width,
+            token_w = token_width
+        ).unwrap();
+
+        writeln!(out).unwrap();
+
+        let mut total_lines = 0;
+
+        for entry in files {
+
+            total_lines += entry.line_count;
+
+            if self.colored {
                 writeln!(
                     out,
-                    "📄 {:<width$} {} lines\n",
-                    "📦 Total LOC",
-                    total_lines,
-                    width = max_len + 2
+                    "{} {:<path_w$} : {:>line_w$} | {:>word_w$} | {:>token_w$}",
+                    "📄".truecolor(255,255,0),
+                    entry.path.truecolor(0,255,255),
+                    entry.line_count,
+                    entry.word_count,
+                    entry.token_est,
+                    path_w = path_width,
+                    line_w = line_width,
+                    word_w = word_width,
+                    token_w = token_width
+                ).unwrap();
+            } else {
+                writeln!(
+                    out,
+                    "📄 {:<path_w$} : {:>line_w$} | {:>word_w$} | {:>token_w$}",
+                    entry.path,
+                    entry.line_count,
+                    entry.word_count,
+                    entry.token_est,
+                    path_w = path_width,
+                    line_w = line_width,
+                    word_w = word_width,
+                    token_w = token_width
                 ).unwrap();
             }
+        }
 
-            writeln!(out, "\n===============================================").unwrap();
+        writeln!(out, "\n====").unwrap();
+        writeln!(out, "📦 Total LOC: {}", total_lines).unwrap();
+
+        writeln!(
+            out,
+            "\n{}",
+            "===============================================".truecolor(255,255,0)
+        ).unwrap();
+
+        if self.colored {
+            writeln!(out, "{}", "📑 File Contents".bright_magenta().bold()).unwrap();
+        } else {
             writeln!(out, "📑 File Contents").unwrap();
         }
     }
@@ -156,15 +185,25 @@ mod tests {
 
     fn sample_files() -> Vec<FileEntry> {
         vec![
-            FileEntry { path: "src/main.rs".into(), line_count: 10 },
-            FileEntry { path: "src/formatter.rs".into(), line_count: 5 },
+            FileEntry {
+                path: "src/main.rs".into(),
+                line_count: 10,
+                word_count: 20,
+                token_est: 27,
+            },
+            FileEntry {
+                path: "src/formatter.rs".into(),
+                line_count: 5,
+                word_count: 12,
+                token_est: 16,
+            }
         ]
     }
 
     #[test]
     fn test_cli_index_plain() {
         let mut buf = Vec::new();
-        let fmt = CliFormatter { colored: false, show_lines: false };
+        let fmt = CliFormatter { colored: false };
         fmt.print_index(&sample_files(), &mut buf);
         let out = String::from_utf8(buf).unwrap();
 
@@ -177,7 +216,7 @@ mod tests {
     #[test]
     fn test_cli_preamble_plaintext() {
         let mut buf = Vec::new();
-        let fmt = CliFormatter { colored: false, show_lines: false };
+        let fmt = CliFormatter { colored: false };
         fmt.print_preamble(".", &mut buf);
         let out = String::from_utf8(buf).unwrap();
 
@@ -188,7 +227,7 @@ mod tests {
     #[test]
     fn test_file_contents_marker() {
         let mut buf = Vec::new();
-        let fmt = CliFormatter { colored: false, show_lines: false };
+        let fmt = CliFormatter { colored: false };
         fmt.print_contents(&sample_files(), &mut buf);
         let out = String::from_utf8(buf).unwrap();
 

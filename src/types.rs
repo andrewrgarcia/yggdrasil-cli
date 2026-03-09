@@ -24,4 +24,6 @@ pub struct GroupedMatches {
 pub struct FileEntry {
     pub path: String,
     pub line_count: usize,
+    pub word_count: usize,
+    pub token_est: usize,
 }

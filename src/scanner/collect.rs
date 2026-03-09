@@ -6,19 +6,19 @@ use crate::types::FileEntry;
 use super::stdin::read_multiline_stdin;
 use super::patterns::load_patterns_file;
 use super::filters::matches_filters;
-use super::counter::count_lines;
+
+use std::fs;
 
 /// Collect all file paths according to ignore/only filters and flags.
 pub fn collect_files(args: &Args) -> Vec<FileEntry> {
+
     let mut ignore_patterns = args.ignore.clone();
     let mut only_patterns = args.only.clone();
 
     // --black
     if let Some(black_opt) = &args.black {
         match black_opt {
-            // --black file
             Some(file) => ignore_patterns.extend(load_patterns_file(file)),
-            // --black (no argument, read from stdin)
             None => {
                 if let Some(p) = read_multiline_stdin("Enter BLACK patterns (one per line):") {
                     ignore_patterns.extend(p);
@@ -43,7 +43,9 @@ pub fn collect_files(args: &Args) -> Vec<FileEntry> {
 
     // Walk directory tree
     for entry in WalkDir::new(&args.dir).into_iter().filter_map(|e| e.ok()) {
+
         if entry.file_type().is_file() {
+
             let path = entry.path().to_string_lossy().to_string();
 
             // --show <ext>
@@ -68,13 +70,21 @@ pub fn collect_files(args: &Args) -> Vec<FileEntry> {
                 continue;
             }
 
+            // Read file once
+            let contents = fs::read_to_string(&path).unwrap_or_default();
+
+            let line_count = contents.lines().count();
+            let word_count = contents.split_whitespace().count();
+            let token_est = ((word_count as f32) * 1.33).round() as usize;
+
             files.push(FileEntry {
-                path: path.clone(),
-                line_count: count_lines(&path),
+                path,
+                line_count,
+                word_count,
+                token_est,
             });
         }
     }
 
     files
 }
-

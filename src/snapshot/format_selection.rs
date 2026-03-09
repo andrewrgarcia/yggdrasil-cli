@@ -19,7 +19,6 @@ pub fn select_formatter<'a>(
     } else {
         Box::new(CliFormatter {
             colored: args.out.is_none() && atty::is(Stream::Stdout),
-            show_lines: !args.no_lines,
         })
     }
 }
