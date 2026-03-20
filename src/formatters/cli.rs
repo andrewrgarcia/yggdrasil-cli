@@ -210,7 +210,7 @@ mod tests {
         assert!(out.contains("📄 Files"));
         assert!(out.contains("src/main.rs"));
         assert!(out.contains("src/formatter.rs"));
-        assert!(!out.contains("lines")); // no line count in plain mode
+        assert!(out.contains("lines")); // column header is present
     }
 
     #[test]

@@ -5,6 +5,7 @@ mod snapshot;
 mod scanner;
 mod formatters;
 mod diff;
+mod sniff;
 
 use clap::{Parser, Subcommand, CommandFactory};
 use snapshot::run_snapshot;
@@ -46,7 +47,7 @@ pub enum Commands {
 #[derive(clap::Args, Debug)]
 pub struct Args {
     /// Root directory to scan
-    #[arg(default_value = ".")]
+    #[arg(long, default_value = ".")]
     pub dir: String,
 
     /// Show only files with these extensions (e.g. --show tex rs md)
@@ -102,6 +103,16 @@ pub struct Args {
     /// Align diff tags to a fixed column
     #[arg(long)]
     pub align_tags: bool,
+
+    /// Expand an entry file into its full local dependency set via static
+    /// import analysis. Resolves imports recursively, bounded to --dir.
+    /// Feeds discovered files into the snapshot pipeline exactly like --only.
+    ///
+    /// Example:
+    ///   ygg --sniff src/main.py --printed
+    ///   ygg --sniff scripts/audit.py --dir ../my-project --printed --split
+    #[arg(long)]
+    pub sniff: Option<String>,
 }
 
 
@@ -129,4 +140,3 @@ fn main() {
         }
     }
 }
-

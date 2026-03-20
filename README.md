@@ -43,6 +43,7 @@ You must specify *what* to include using any of:
 * `--only <paths…>`
 * `--show <extensions…>`
 * `--white <manifest>`
+* `--sniff <entry file>`
 
 You may also exclude using:
 
@@ -124,6 +125,74 @@ ygg --only src --printed
 
 ---
 
+# Sniff Mode — Semantic File Expansion
+
+`--sniff` is the fastest way to build a codex when you have a single entry point
+and want everything it depends on — without manually listing files.
+
+Given an entry file, Yggdrasil reads its static imports, resolves them to local
+files inside `--dir`, and repeats recursively until no new local files are found.
+The full reachable set is fed into the snapshot pipeline exactly like `--only`.
+
+```bash
+ygg --sniff path/to/entry.py --dir path/to/project --printed
+```
+
+## How it works
+
+1. Start from the entry file
+2. Read its top-level (preamble) imports only
+3. Resolve each import to local files inside `--dir`
+4. Recursively repeat for every discovered file
+5. Stop when no new local files are found
+6. Pass the complete set to the snapshot pipeline
+
+External libraries (`numpy`, `pandas`, etc.) are silently ignored — only files
+that exist inside `--dir` are included.
+
+## Examples
+
+```bash
+# Snapshot an analysis script and all its local dependencies
+ygg --sniff scripts/analysis/audit.py --dir ../my-project --printed
+
+# Same, but split into LLM-safe shards
+ygg --sniff scripts/analysis/audit.py --dir ../my-project --printed --split 10
+
+# Combine with --ignore to exclude noisy files
+ygg --sniff src/main.py --dir . --ignore tests --printed
+```
+
+## What sniff resolves
+
+For Python, given `from graveyard.meta.macro_runner import load_data_macro`:
+
+* `graveyard/meta/macro_runner.py`
+* `graveyard/meta/macro_runner/__init__.py`
+* truncated forms: `graveyard/meta.py`, `graveyard.py`
+
+The first candidate that exists inside `--dir` is followed.
+
+## What sniff does not do
+
+* It does not scan the entire repo
+* It does not analyze runtime behavior or call graphs
+* It does not follow relative imports (`.sibling`, `..parent`) — planned for a future release
+* It does not include external libraries
+
+## Mental model
+
+| Flag | Selection method |
+|------|-----------------|
+| `--only` | manual paths |
+| `--white` | manifest file |
+| `--sniff` | semantic expansion from entry point |
+
+Sniff is just a smart way to fill `--only`.
+All other flags (`--ignore`, `--split`, `--printed`, etc.) apply normally after expansion.
+
+---
+
 # Large Codices & Context Limits
 
 Yggdrasil can split large codices into **LLM-safe shards** while preserving structure.
@@ -134,8 +203,9 @@ Use `--split` to divide output into multiple standalone codex files:
 ygg --only <...> --printed --split
 ygg --only <...> --printed --split 8
 ygg --white <WHITE.md> --printed --split 10
-ygg --whited --split 
+ygg --whited --split
 ygg --whited --split 30
+ygg --sniff entry.py --dir ../project --printed --split 10
 ```
 
 Each shard:
@@ -146,8 +216,6 @@ Each shard:
 * is independently valid for AI ingestion
 
 Splitting is expressed in **thousands of tokens**, not raw token counts.
-
-This allows large projects to pass through constrained context windows intact — piece by piece.
 
 ---
 
@@ -253,7 +321,7 @@ Design principles:
 * Deterministic, repeatable output
 * Minimal configuration
 * LLM-friendly structure
-* Complete control over what’s included
+* Complete control over what's included
 
 ---
 
@@ -271,8 +339,21 @@ Design principles:
 * `--align-tags`
 * `--printed`
 
-### Planned (v0.3 → v1.0)
+### Completed (v0.3.0)
 
+* `--split`: LLM-safe shard output
+
+### Completed (v0.4.0)
+
+* `--sniff`: semantic file expansion from a single entry point
+* Recursive static import resolution bounded to `--dir`
+* Nordic-flavoured sniff header in both CLI and Markdown output
+* `--dir` promoted to named flag for robustness
+
+### Planned (v0.5 → v1.0)
+
+* Relative import resolution in `--sniff` (`.sibling`, `..parent`)
+* Multi-language sniff (Rust `use`, TypeScript `import`)
 * Tree-view / flat-view toggle
 * Themeable CLI output
 * HTML codex export

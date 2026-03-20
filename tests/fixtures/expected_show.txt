@@ -6,41 +6,48 @@ Schema: index first, then file contents.
 - Contents are shown with markers <<< FILE START: <path> >>> … <<< FILE END: <path> >>>
 
 📄 Files
-📄 ./src/diff/block_hash.rs             
-📄 ./src/diff/crossfile.rs              
-📄 ./src/diff/engine.rs                 
-📄 ./src/diff/expand.rs                 
-📄 ./src/diff/grouping.rs               
-📄 ./src/diff/inline.rs                 
-📄 ./src/diff/matcher.rs                
-📄 ./src/diff/mod.rs                    
-📄 ./src/diff/printing.rs               
-📄 ./src/diff/structural.rs             
-📄 ./src/formatters/cli.rs              
-📄 ./src/formatters/diff/cli.rs         
-📄 ./src/formatters/diff/markdown.rs    
-📄 ./src/formatters/diff/mod.rs         
-📄 ./src/formatters/markdown.rs         
-📄 ./src/formatters/mod.rs              
-📄 ./src/formatters/output/cli.rs       
-📄 ./src/formatters/output/markdown.rs  
-📄 ./src/formatters/output/mod.rs       
-📄 ./src/formatters/traits.rs           
-📄 ./src/main.rs                        
-📄 ./src/scanner/collect.rs             
-📄 ./src/scanner/counter.rs             
-📄 ./src/scanner/filters.rs             
-📄 ./src/scanner/mod.rs                 
-📄 ./src/scanner/patterns.rs            
-📄 ./src/scanner/stdin.rs               
-📄 ./src/snapshot/filelist.rs           
-📄 ./src/snapshot/format_selection.rs   
-📄 ./src/snapshot/mod.rs                
-📄 ./src/snapshot/run.rs                
-📄 ./src/snapshot/split.rs              
-📄 ./src/snapshot/writer.rs             
-📄 ./src/types.rs                       
-📄 ./src/utils/mod.rs                   
+path                                  : lines | words | tokens
+
+📄 ./src/diff/block_hash.rs              :    19 |    66 |     88
+📄 ./src/diff/crossfile.rs               :    52 |   134 |    178
+📄 ./src/diff/engine.rs                  :    84 |   197 |    262
+📄 ./src/diff/expand.rs                  :    28 |    83 |    110
+📄 ./src/diff/grouping.rs                :     0 |     0 |      0
+📄 ./src/diff/inline.rs                  :    27 |    78 |    104
+📄 ./src/diff/matcher.rs                 :    90 |   267 |    355
+📄 ./src/diff/mod.rs                     :    10 |    24 |     32
+📄 ./src/diff/printing.rs                :     0 |     0 |      0
+📄 ./src/diff/structural.rs              :    42 |   151 |    201
+📄 ./src/formatters/cli.rs               :   237 |   545 |    725
+📄 ./src/formatters/diff/cli.rs          :   124 |   291 |    387
+📄 ./src/formatters/diff/markdown.rs     :    62 |   187 |    249
+📄 ./src/formatters/diff/mod.rs          :     5 |    12 |     16
+📄 ./src/formatters/markdown.rs          :   190 |   398 |    529
+📄 ./src/formatters/mod.rs               :     8 |    18 |     24
+📄 ./src/formatters/output/cli.rs        :   145 |   394 |    524
+📄 ./src/formatters/output/markdown.rs   :    80 |   209 |    278
+📄 ./src/formatters/output/mod.rs        :     6 |    12 |     16
+📄 ./src/formatters/traits.rs            :    16 |    61 |     81
+📄 ./src/main.rs                         :   142 |   467 |    621
+📄 ./src/scanner/collect.rs              :    90 |   207 |    275
+📄 ./src/scanner/filters.rs              :    47 |    99 |    132
+📄 ./src/scanner/mod.rs                  :     7 |    15 |     20
+📄 ./src/scanner/patterns.rs             :    31 |    61 |     81
+📄 ./src/scanner/stdin.rs                :    30 |    95 |    126
+📄 ./src/snapshot/filelist.rs            :    10 |    37 |     49
+📄 ./src/snapshot/format_selection.rs    :    25 |    56 |     74
+📄 ./src/snapshot/mod.rs                 :     8 |    18 |     24
+📄 ./src/snapshot/run.rs                 :   278 |   865 |   1150
+📄 ./src/snapshot/split.rs               :    45 |   124 |    165
+📄 ./src/snapshot/writer.rs              :    55 |   179 |    238
+📄 ./src/sniff/mod.rs                    :     4 |     9 |     12
+📄 ./src/sniff/python.rs                 :   183 |   542 |    721
+📄 ./src/sniff/resolve.rs                :   169 |   485 |    645
+📄 ./src/types.rs                        :    29 |    71 |     94
+📄 ./src/utils/mod.rs                    :     4 |     9 |     12
+
+====
+📦 Total LOC: 2382
 
 ===============================================
 📑 File Contents

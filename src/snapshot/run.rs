@@ -4,9 +4,11 @@ use crate::snapshot::filelist::prepare_file_list;
 use crate::snapshot::writer::{open_writer, OutputTarget};
 use crate::snapshot::format_selection::select_formatter;
 use crate::snapshot::split::split_files_by_tokens;
+use crate::sniff::sniff_forward_paths;
 
 use std::fs::File;
 use std::io::Write;
+use atty;
 
 /// Inject FUR-style stats into the markdown buffer
 fn finalize_markdown(buf: &[u8], out_path: &str, shard_idx: Option<(usize, usize)>) {
@@ -34,8 +36,115 @@ fn finalize_markdown(buf: &[u8], out_path: &str, shard_idx: Option<(usize, usize
 }
 
 
+/// Emit a Yggdrasil-flavoured sniff header block into any writer.
+fn write_sniff_header(
+    entry: &str,
+    paths: &[String],
+    is_markdown: bool,
+    colored: bool,
+    out: &mut dyn std::io::Write,
+) {
+    if is_markdown {
+        writeln!(out, "<!-- sniff: roots traced from {} -->", entry).unwrap();
+        writeln!(out, "> 🐺 **Yggdrasil Sniff** — branches traced from `{}`", entry).unwrap();
+        writeln!(out, ">").unwrap();
+        writeln!(out, "> The world-tree read the runes of `{}`,", entry).unwrap();
+        writeln!(out, "> and followed {} branch{} to their roots.",
+            paths.len(),
+            if paths.len() == 1 { "" } else { "es" }
+        ).unwrap();
+        writeln!(out, ">").unwrap();
+        for p in paths {
+            writeln!(out, "> - `{}`", p).unwrap();
+        }
+        writeln!(out).unwrap();
+    } else {
+        use colored::Colorize;
+        let sep  = "━".repeat(54);
+        let sep2 = "─".repeat(54);
+        if colored {
+            writeln!(out, "{}", sep.truecolor(255,200,50)).unwrap();
+            writeln!(out, "{}  {}",
+                "🐺".truecolor(100,220,100),
+                "YGGDRASIL SNIFF".bright_magenta().bold()
+            ).unwrap();
+            writeln!(out, "The world-tree traced the runes of").unwrap();
+            writeln!(out, "  {}",
+                entry.truecolor(0,255,255).bold()
+            ).unwrap();
+            writeln!(out, "and followed {} branch{} to their roots:",
+                paths.len().to_string().bright_magenta().bold(),
+                if paths.len() == 1 { "" } else { "es" }
+            ).unwrap();
+            writeln!(out, "{}", sep2.truecolor(255,200,50)).unwrap();
+            for p in paths {
+                writeln!(out, "  {} {}",
+                    "⎇".truecolor(255,200,50),
+                    p.truecolor(0,255,255)
+                ).unwrap();
+            }
+            writeln!(out, "{}", sep.truecolor(255,200,50)).unwrap();
+        } else {
+            writeln!(out, "{}", sep).unwrap();
+            writeln!(out, "🐺  YGGDRASIL SNIFF").unwrap();
+            writeln!(out, "The world-tree traced the runes of").unwrap();
+            writeln!(out, "  {}", entry).unwrap();
+            writeln!(out, "and followed {} branch{} to their roots:",
+                paths.len(),
+                if paths.len() == 1 { "" } else { "es" }
+            ).unwrap();
+            writeln!(out, "{}", sep2).unwrap();
+            for p in paths {
+                writeln!(out, "  ⎇ {}", p).unwrap();
+            }
+            writeln!(out, "{}", sep).unwrap();
+        }
+        writeln!(out).unwrap();
+    }
+}
+
 /// Run the project snapshot (default command)
 pub fn run_snapshot(mut args: Args) {
+
+    //
+    // ============================================================
+    // 0. HANDLE --sniff
+    //    Expand entry file → reachable local deps → populate args.only
+    //    Must run before all other flag handling so downstream logic
+    //    (--ignore, --show, --split, etc.) applies normally.
+    // ============================================================
+    //
+
+    // sniff_meta: Some((entry_file, discovered_paths)) when --sniff was used.
+    // Stored here so we can emit a header block into the snapshot in step 3.
+    let sniff_meta: Option<(String, Vec<String>)> = if let Some(ref target) = args.sniff.clone() {
+        let discovered = sniff_forward_paths(target, &args.dir);
+
+        if discovered.is_empty() {
+            eprintln!(
+                "⚠️  Yggdrasil could not trace the branches of '{}'\nunder root '{}'. Verify paths and --dir.",
+                target, args.dir
+            );
+        } else {
+            eprintln!("🌿 {} branches traced from the root.", discovered.len());
+        }
+
+        // Merge with any explicit --only the user also passed.
+        // sniff paths go first so they appear before any manual additions.
+        let mut merged = discovered.clone();
+        merged.extend(args.only.drain(..));
+
+        // Deduplicate while preserving order
+        let mut seen = std::collections::HashSet::new();
+        args.only = merged
+            .into_iter()
+            .filter(|p| seen.insert(p.clone()))
+            .collect();
+
+        if discovered.is_empty() { None } else { Some((target.clone(), discovered)) }
+    } else {
+        None
+    };
 
     //
     // ============================================================
@@ -109,6 +218,9 @@ pub fn run_snapshot(mut args: Args) {
                 for (i, packet) in packets.iter().enumerate() {
                     let mut local_buf = Vec::new();
 
+                    if let Some((ref entry, ref paths)) = sniff_meta {
+                        write_sniff_header(entry, paths, true, false, &mut local_buf);
+                    }
                     fmt.print_preamble(&root, &mut local_buf);
                     fmt.print_index(packet, &mut local_buf);
 
@@ -122,6 +234,9 @@ pub fn run_snapshot(mut args: Args) {
                 }
             } else {
                 // original behavior
+                if let Some((ref entry, ref paths)) = sniff_meta {
+                    write_sniff_header(entry, paths, true, false, buf);
+                }
                 fmt.print_preamble(&root, buf);
                 fmt.print_index(&prepared, buf);
 
@@ -141,6 +256,10 @@ pub fn run_snapshot(mut args: Args) {
         OutputTarget::Stdout => {
             let out = &mut std::io::stdout();
 
+            if let Some((ref entry, ref paths)) = sniff_meta {
+                let use_color = atty::is(atty::Stream::Stdout);
+                write_sniff_header(entry, paths, false, use_color, out);
+            }
             fmt.print_preamble(&root, out);
             fmt.print_index(&prepared, out);
 
