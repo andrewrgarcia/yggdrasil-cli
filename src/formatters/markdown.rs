@@ -9,6 +9,7 @@ use super::traits::OutputFormatter;
 #[allow(dead_code)]
 pub struct MarkdownFormatter {
     pub show_lines: bool,
+    pub show_files_section: bool,
 }
 
 impl OutputFormatter for MarkdownFormatter {
@@ -37,7 +38,6 @@ impl OutputFormatter for MarkdownFormatter {
     }
 
     fn print_index(&self, files: &Vec<FileEntry>, out: &mut dyn Write) {
-
         let mut total_lines = 0usize;
 
         let header = "path";
@@ -78,12 +78,12 @@ impl OutputFormatter for MarkdownFormatter {
             line_w = line_width.max(5),
             word_w = word_width.max(5),
             token_w = token_width.max(6),
-        ).unwrap();
+        )
+        .unwrap();
 
         writeln!(out).unwrap();
 
         for entry in files {
-
             total_lines += entry.line_count;
 
             writeln!(
@@ -97,11 +97,15 @@ impl OutputFormatter for MarkdownFormatter {
                 line_w = line_width.max(5),
                 word_w = word_width.max(5),
                 token_w = token_width.max(6),
-            ).unwrap();
+            )
+            .unwrap();
         }
 
         writeln!(out, "total_loc: {}\n", total_lines).unwrap();
-        writeln!(out, "## FILES").unwrap();
+
+        if self.show_files_section {
+            writeln!(out, "## FILES").unwrap();
+        }
     }
 
     fn print_contents(&self, files: &Vec<FileEntry>, out: &mut dyn Write) {
@@ -120,7 +124,8 @@ impl OutputFormatter for MarkdownFormatter {
                 out,
                 "<file path=\"{}\" lang=\"{}\" lines=\"{}\">",
                 entry.path, lang, entry.line_count
-            ).unwrap();
+            )
+            .unwrap();
             writeln!(out, "```{}", lang).unwrap();
 
             match fs::read_to_string(&entry.path) {
@@ -138,7 +143,6 @@ impl OutputFormatter for MarkdownFormatter {
         }
     }
 }
-
 
 #[cfg(test)]
 mod tests {
@@ -165,7 +169,10 @@ mod tests {
     #[test]
     fn test_markdown_preamble() {
         let mut buf = Vec::new();
-        let fmt = MarkdownFormatter { show_lines: false };
+        let fmt = MarkdownFormatter {
+            show_lines: false,
+            show_files_section: true,
+        };
         fmt.print_preamble(".", &mut buf);
         let out = String::from_utf8(buf).unwrap();
 
@@ -178,13 +185,30 @@ mod tests {
     #[test]
     fn test_markdown_index_lists_files() {
         let mut buf = Vec::new();
-        let fmt = MarkdownFormatter { show_lines: false };
+        let fmt = MarkdownFormatter {
+            show_lines: false,
+            show_files_section: true,
+        };
         fmt.print_index(&sample_files(), &mut buf);
         let out = String::from_utf8(buf).unwrap();
 
         assert!(out.contains("src/main.rs"));
         assert!(out.contains("src/formatter.rs"));
         assert!(out.contains("total_loc: 15"));
+        assert!(out.contains("## FILES"));
+    }
+
+    #[test]
+    fn test_markdown_index_omits_files_section_when_disabled() {
+        let mut buf = Vec::new();
+        let fmt = MarkdownFormatter {
+            show_lines: false,
+            show_files_section: false,
+        };
+        fmt.print_index(&sample_files(), &mut buf);
+        let out = String::from_utf8(buf).unwrap();
+
+        assert!(out.contains("total_loc: 15"));
+        assert!(!out.contains("## FILES"));
     }
 }
-

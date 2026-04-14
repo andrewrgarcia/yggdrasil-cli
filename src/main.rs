@@ -11,7 +11,6 @@ use clap::{Parser, Subcommand, CommandFactory};
 use snapshot::run_snapshot;
 use diff::run_diff;
 
-
 #[derive(Parser, Debug)]
 #[command(
     name = "ygg",
@@ -63,7 +62,8 @@ pub struct Args {
     pub md: bool,
 
     /// Restrict output to these files/dirs/globs
-    #[arg(long, num_args = 1.., value_delimiter = ' ')]
+    /// `--tree` is a direct alias of `--only`
+    #[arg(long, alias = "tree", num_args = 1.., value_delimiter = ' ')]
     pub only: Vec<String>,
 
     /// Do not display line counts in file index
@@ -88,9 +88,14 @@ pub struct Args {
     pub whited: Option<Option<String>>,
 
     /// Shortcut for `--contents --out SHOW.md`
-    /// Example: `ygg printed` or `ygg printed MyFile.md`
+    /// Example: `ygg --printed` or `ygg --printed MyFile.md`
     #[arg(long, short = 'p', num_args = 0..=1)]
     pub printed: Option<Option<String>>,
+
+    /// Interactive index-only export to SHOW.md
+    /// Equivalent to: interactive `--white` + markdown output, but no FILES section
+    #[arg(long, num_args = 0..=1)]
+    pub treed: Option<Option<String>>,
 
     /// Split output into token-bounded packets (K = thousands, default 32)
     #[arg(long, num_args = 0..=1, value_name = "K")]
@@ -115,11 +120,9 @@ pub struct Args {
     pub sniff: Option<String>,
 }
 
-
 pub mod cli {
     pub use super::{Cli, Args, Commands};
 }
-
 
 fn main() {
     let cli = Cli::parse();
@@ -134,7 +137,6 @@ fn main() {
         Some(Commands::Diff { from, to, align_tags }) => {
             run_diff(from, to, align_tags);
         }
-
         None => {
             run_snapshot(cli.args);
         }

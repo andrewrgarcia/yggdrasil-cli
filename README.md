@@ -125,6 +125,72 @@ ygg --only src --printed
 
 ---
 
+## Tree Mode — Fast Index Snapshots
+
+Yggdrasil supports a lightweight **tree mode** for quickly inspecting a subset of your codebase without including file contents.
+
+### Alias: `--tree`
+
+`--tree` is a direct alias of `--only`.
+
+```bash
+ygg --tree src/
+```
+
+Equivalent to:
+
+```bash
+ygg --only src/
+```
+
+This prints a clean index of files (paths + LOC + token estimates) to the terminal.
+
+---
+
+### Interactive Tree Export: `--treed`
+
+`--treed` is the index-only counterpart to `--whited`.
+
+It:
+
+* launches interactive paste mode
+* selects files (like `--white`)
+* writes to `SHOW.md`
+* **omits the FILES section (index only)**
+
+```bash
+ygg --treed
+```
+
+Paste:
+
+```
+src/diff
+```
+
+Output (`SHOW.md`):
+
+```md
+## INDEX
+./src/diff/engine.rs : ...
+...
+total_loc: 352
+```
+
+No file contents are included.
+
+---
+
+### When to use tree mode
+
+| Goal                          | Command                     |
+| ----------------------------- | --------------------------- |
+| Quick inspection of a folder  | `ygg --tree src/`           |
+| LLM-friendly index snapshot   | `ygg --treed`               |
+| Full codex (index + contents) | `ygg --only src/ --printed` |
+
+---
+
 # Sniff Mode — Semantic File Expansion
 
 `--sniff` is the fastest way to build a codex when you have a single entry point

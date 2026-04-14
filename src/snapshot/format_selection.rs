@@ -7,7 +7,6 @@ use atty::Stream;
 pub fn select_formatter<'a>(
     args: &Args,
 ) -> Box<dyn OutputFormatter + 'a> {
-
     let use_md = if let Some(out_file) = &args.out {
         out_file.ends_with(".md")
     } else {
@@ -15,11 +14,13 @@ pub fn select_formatter<'a>(
     };
 
     if use_md {
-        Box::new(MarkdownFormatter { show_lines: !args.no_lines })
+        Box::new(MarkdownFormatter {
+            show_lines: !args.no_lines,
+            show_files_section: args.contents,
+        })
     } else {
         Box::new(CliFormatter {
             colored: args.out.is_none() && atty::is(Stream::Stdout),
         })
     }
 }
-
