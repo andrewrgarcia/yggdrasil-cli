@@ -1,6 +1,6 @@
 use std::fs;
+use super::normalize::normalize_pattern;
 
-/// Load patterns from a file, skipping empty lines and comments.
 pub fn load_patterns_file(path: &str) -> Vec<String> {
     fs::read_to_string(path)
         .map(|contents| {
@@ -8,7 +8,7 @@ pub fn load_patterns_file(path: &str) -> Vec<String> {
                 .lines()
                 .map(str::trim)
                 .filter(|l| !l.is_empty() && !l.starts_with('#'))
-                .map(String::from)
+                .map(normalize_pattern)
                 .collect()
         })
         .unwrap_or_default()

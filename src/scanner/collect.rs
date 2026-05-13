@@ -6,14 +6,15 @@ use crate::types::FileEntry;
 use super::stdin::read_multiline_stdin;
 use super::patterns::load_patterns_file;
 use super::filters::matches_filters;
+use super::normalize::normalize_pattern;
 
 use std::fs;
 
 /// Collect all file paths according to ignore/only filters and flags.
 pub fn collect_files(args: &Args) -> Vec<FileEntry> {
 
-    let mut ignore_patterns = args.ignore.clone();
-    let mut only_patterns = args.only.clone();
+    let mut ignore_patterns: Vec<String> = args.ignore.iter().map(|s| normalize_pattern(s)).collect();
+    let mut only_patterns: Vec<String> = args.only.iter().map(|s| normalize_pattern(s)).collect();
 
     // --black
     if let Some(black_opt) = &args.black {

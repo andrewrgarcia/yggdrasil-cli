@@ -1,28 +1,32 @@
 use glob::Pattern;
 use std::path::Path;
+use super::normalize::normalize_path;
 
 pub fn matches_filters(path: &str, filters: &[String], default: bool) -> bool {
     if filters.is_empty() {
         return default;
     }
 
-    let norm_path = path.strip_prefix("./").unwrap_or(path);
-    let base = Path::new(norm_path)
+    let norm_path = normalize_path(path);
+    let base = Path::new(&norm_path)
         .file_name()
         .and_then(|n| n.to_str())
         .unwrap_or("");
 
     filters.iter().any(|f| {
-        let norm_filter = f.strip_prefix("./").unwrap_or(f);
+        // Filters are already normalized at intake, but be defensive in case
+        // they came in via --only on the CLI (which we don't normalize yet).
+        let norm_filter = f.replace('\\', "/");
+        let norm_filter = norm_filter.strip_prefix("./").unwrap_or(&norm_filter);
+
         norm_path == norm_filter
             || base == norm_filter
             || norm_path.starts_with(norm_filter)
             || Pattern::new(norm_filter)
-                .map(|p| p.matches(norm_path) || p.matches(base))
+                .map(|p| p.matches(&norm_path) || p.matches(base))
                 .unwrap_or(false)
     })
 }
-
 
 #[cfg(test)]
 mod tests {
@@ -44,4 +48,3 @@ mod tests {
         assert!(!matches_filters("anything", &filters, false));
     }
 }
-

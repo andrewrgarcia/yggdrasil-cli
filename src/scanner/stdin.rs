@@ -1,6 +1,6 @@
 use std::io::{self, Read};
+use super::normalize::normalize_pattern;
 
-/// Read multi-line input from stdin for black/white patterns.
 pub fn read_multiline_stdin(prompt: &str) -> Option<Vec<String>> {
     use colored::Colorize;
 
@@ -23,7 +23,7 @@ pub fn read_multiline_stdin(prompt: &str) -> Option<Vec<String>> {
                 .lines()
                 .map(str::trim)
                 .filter(|l| !l.is_empty() && !l.starts_with('#'))
-                .map(String::from)
+                .map(normalize_pattern)
                 .collect(),
         )
     }
