@@ -1,4 +1,4 @@
-use similar::{TextDiff, ChangeTag};
+use similar::{ChangeTag, TextDiff};
 
 /// Print a single-file unified inline diff.
 pub fn diff_file_contents(file: &str, from: &str, to: &str) {
@@ -24,4 +24,3 @@ pub fn diff_file_contents(file: &str, from: &str, to: &str) {
 
     println!();
 }
-

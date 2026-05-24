@@ -29,7 +29,6 @@ fn test_markdown_output_to_file() {
     assert!(contents.contains("# CODEX"));
     assert!(contents.contains("generated_by: yggdrasil-cli"));
     assert!(contents.contains("format: markdown"));
-
 }
 
 #[test]
@@ -52,7 +51,10 @@ fn test_against_fixture() {
     if !fixture_path.exists() {
         fs::create_dir_all(fixture_path.parent().unwrap()).unwrap();
         fs::write(fixture_path, &got).unwrap();
-        panic!("Fixture was missing. Created at {:?}. Re-run tests.", fixture_path);
+        panic!(
+            "Fixture was missing. Created at {:?}. Re-run tests.",
+            fixture_path
+        );
     }
 
     let expected = fs::read_to_string(fixture_path).unwrap();

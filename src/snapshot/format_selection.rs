@@ -4,9 +4,7 @@ use crate::formatters::{CliFormatter, MarkdownFormatter};
 use crate::formatters::traits::OutputFormatter;
 use atty::Stream;
 
-pub fn select_formatter<'a>(
-    args: &Args,
-) -> Box<dyn OutputFormatter + 'a> {
+pub fn select_formatter<'a>(args: &Args) -> Box<dyn OutputFormatter + 'a> {
     let use_md = if let Some(out_file) = &args.out {
         out_file.ends_with(".md")
     } else {

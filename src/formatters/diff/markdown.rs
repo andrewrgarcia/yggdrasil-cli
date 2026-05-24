@@ -1,6 +1,6 @@
+use crate::types::GroupedMatches;
 use std::fs;
 use std::io::Write;
-use crate::types::GroupedMatches;
 
 pub struct DiffMarkdownFormatter;
 
@@ -33,16 +33,16 @@ impl crate::formatters::traits::DiffFormatter for DiffMarkdownFormatter {
 
                     for bwv in &g.blocks {
                         let m = &bwv.block;
-                        let status = if bwv.is_addition { "[ADDED]" } else { "[MOVED]" };
+                        let status = if bwv.is_addition {
+                            "[ADDED]"
+                        } else {
+                            "[MOVED]"
+                        };
 
                         if lineno >= m.from_range.0 && lineno < m.from_range.1 {
                             tag = format!(
                                 " // {} ({}–{} → {}–{})",
-                                status,
-                                m.from_range.0,
-                                m.from_range.1,
-                                m.to_file,
-                                m.to_range.0
+                                status, m.from_range.0, m.from_range.1, m.to_file, m.to_range.0
                             );
                             break;
                         }
@@ -59,4 +59,3 @@ impl crate::formatters::traits::DiffFormatter for DiffMarkdownFormatter {
         }
     }
 }
-

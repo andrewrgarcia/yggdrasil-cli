@@ -3,17 +3,17 @@ use walkdir::WalkDir;
 use crate::cli::Args;
 use crate::types::FileEntry;
 
-use super::stdin::read_multiline_stdin;
-use super::patterns::load_patterns_file;
 use super::filters::matches_filters;
 use super::normalize::normalize_pattern;
+use super::patterns::load_patterns_file;
+use super::stdin::read_multiline_stdin;
 
 use std::fs;
 
 /// Collect all file paths according to ignore/only filters and flags.
 pub fn collect_files(args: &Args) -> Vec<FileEntry> {
-
-    let mut ignore_patterns: Vec<String> = args.ignore.iter().map(|s| normalize_pattern(s)).collect();
+    let mut ignore_patterns: Vec<String> =
+        args.ignore.iter().map(|s| normalize_pattern(s)).collect();
     let mut only_patterns: Vec<String> = args.only.iter().map(|s| normalize_pattern(s)).collect();
 
     // --black
@@ -44,14 +44,13 @@ pub fn collect_files(args: &Args) -> Vec<FileEntry> {
 
     // Walk directory tree
     for entry in WalkDir::new(&args.dir).into_iter().filter_map(|e| e.ok()) {
-
         if entry.file_type().is_file() {
-
             let path = entry.path().to_string_lossy().to_string();
 
             // --show <ext>
             if !args.show.is_empty() {
-                let ext = entry.path()
+                let ext = entry
+                    .path()
                     .extension()
                     .and_then(|e| e.to_str())
                     .unwrap_or("");

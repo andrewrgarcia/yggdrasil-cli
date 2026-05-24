@@ -25,4 +25,3 @@ pub fn expand_paths(paths: &[String]) -> Vec<String> {
 
     files
 }
-

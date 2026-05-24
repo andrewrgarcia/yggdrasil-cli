@@ -1,5 +1,5 @@
-use std::fs;
 use super::normalize::normalize_pattern;
+use std::fs;
 
 pub fn load_patterns_file(path: &str) -> Vec<String> {
     fs::read_to_string(path)

@@ -1,9 +1,9 @@
+use colored::*;
 use std::fs;
 use std::io::Write;
-use colored::*;
 
-use crate::types::GroupedMatches;
 use crate::formatters::traits::DiffFormatter;
+use crate::types::GroupedMatches;
 
 pub struct DiffCliFormatter {
     pub colored: bool,
@@ -13,7 +13,12 @@ pub struct DiffCliFormatter {
 impl DiffFormatter for DiffCliFormatter {
     fn print_preamble(&self, out: &mut dyn Write) {
         if self.colored {
-            writeln!(out, "{}\n", "📦 Cross-file Diff Report".bright_magenta().bold()).unwrap();
+            writeln!(
+                out,
+                "{}\n",
+                "📦 Cross-file Diff Report".bright_magenta().bold()
+            )
+            .unwrap();
         } else {
             writeln!(out, "📦 Cross-file Diff Report\n").unwrap();
         }
@@ -30,7 +35,8 @@ impl DiffFormatter for DiffCliFormatter {
                     g.from_file.truecolor(0, 255, 255),
                     "→".bright_magenta(),
                     g.to_file.truecolor(0, 255, 255)
-                ).unwrap();
+                )
+                .unwrap();
             } else {
                 writeln!(out, "- {} → {}", g.from_file, g.to_file).unwrap();
             }
@@ -48,7 +54,8 @@ impl DiffFormatter for DiffCliFormatter {
                     g.from_file.truecolor(0, 255, 255),
                     "→".bright_magenta(),
                     g.to_file.truecolor(0, 255, 255)
-                ).unwrap();
+                )
+                .unwrap();
             } else {
                 writeln!(out, "{} → {}", g.from_file, g.to_file).unwrap();
             }
@@ -62,14 +69,16 @@ impl DiffFormatter for DiffCliFormatter {
 
                     for bwv in &g.blocks {
                         let m = &bwv.block;
-                        let status = if bwv.is_addition { "[ADDED]" } else { "[MOVED]" };
+                        let status = if bwv.is_addition {
+                            "[ADDED]"
+                        } else {
+                            "[MOVED]"
+                        };
 
                         if lineno >= m.from_range.0 && lineno < m.from_range.1 {
                             tag = format!(
                                 " {} ({}–{} → {}–{})",
-                                status,
-                                m.from_range.0, m.from_range.1,
-                                m.to_file, m.to_range.0
+                                status, m.from_range.0, m.from_range.1, m.to_file, m.to_range.0
                             );
                             break;
                         }
@@ -84,7 +93,8 @@ impl DiffFormatter for DiffCliFormatter {
                                 line,
                                 tag.bright_yellow(),
                                 width = max_len + 1
-                            ).unwrap();
+                            )
+                            .unwrap();
                         } else {
                             writeln!(
                                 out,
@@ -93,25 +103,15 @@ impl DiffFormatter for DiffCliFormatter {
                                 line,
                                 tag,
                                 width = max_len + 1
-                            ).unwrap();
+                            )
+                            .unwrap();
                         }
                     } else {
                         if self.colored {
-                            writeln!(
-                                out,
-                                "{:>4} {}{}",
-                                lineno + 1,
-                                line,
-                                tag.bright_yellow()
-                            ).unwrap();
+                            writeln!(out, "{:>4} {}{}", lineno + 1, line, tag.bright_yellow())
+                                .unwrap();
                         } else {
-                            writeln!(
-                                out,
-                                "{:>4} {}{}",
-                                lineno + 1,
-                                line,
-                                tag
-                            ).unwrap();
+                            writeln!(out, "{:>4} {}{}", lineno + 1, line, tag).unwrap();
                         }
                     }
                 }
@@ -121,4 +121,3 @@ impl DiffFormatter for DiffCliFormatter {
         }
     }
 }
-

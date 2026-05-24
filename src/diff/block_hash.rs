@@ -16,4 +16,3 @@ pub fn hash_block(lines: &[&str]) -> u64 {
     buf.copy_from_slice(&h.as_bytes()[..8]);
     u64::from_le_bytes(buf)
 }
-

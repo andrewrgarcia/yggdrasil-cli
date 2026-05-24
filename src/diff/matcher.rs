@@ -1,8 +1,8 @@
 use std::collections::{HashMap, HashSet};
 
-use crate::types::BlockMatch;
 use super::block_hash::hash_line;
 use super::structural::extend_structural_block;
+use crate::types::BlockMatch;
 
 /// Index: hash -> all occurrences (file, line_no)
 type LineIndex = HashMap<u64, Vec<(String, usize)>>;
@@ -45,12 +45,10 @@ fn find_block_matches_single(
                         continue;
                     }
 
-                    let (_, to_content) =
-                        to_files.iter().find(|(f, _)| f == to_file).unwrap();
+                    let (_, to_content) = to_files.iter().find(|(f, _)| f == to_file).unwrap();
                     let to_lines: Vec<&str> = to_content.lines().collect();
 
-                    let (f1, f2, t1, t2) =
-                        extend_structural_block(&from_lines, &to_lines, i, *j);
+                    let (f1, f2, t1, t2) = extend_structural_block(&from_lines, &to_lines, i, *j);
 
                     if f2 - f1 >= min_block_size {
                         for k in f1..f2 {
@@ -87,4 +85,3 @@ pub fn find_block_matches_multi(
     }
     all
 }
-

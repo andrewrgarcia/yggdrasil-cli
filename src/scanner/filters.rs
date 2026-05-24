@@ -1,6 +1,6 @@
+use super::normalize::normalize_path;
 use glob::Pattern;
 use std::path::Path;
-use super::normalize::normalize_path;
 
 pub fn matches_filters(path: &str, filters: &[String], default: bool) -> bool {
     if filters.is_empty() {

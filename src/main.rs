@@ -1,15 +1,15 @@
 //! main.rs — with args.rs fully absorbed
 
-mod types;
-mod snapshot;
-mod scanner;
-mod formatters;
 mod diff;
+mod formatters;
+mod scanner;
+mod snapshot;
 mod sniff;
+mod types;
 
-use clap::{Parser, Subcommand, CommandFactory};
-use snapshot::run_snapshot;
+use clap::{CommandFactory, Parser, Subcommand};
 use diff::run_diff;
+use snapshot::run_snapshot;
 
 #[derive(Parser, Debug)]
 #[command(
@@ -121,7 +121,7 @@ pub struct Args {
 }
 
 pub mod cli {
-    pub use super::{Cli, Args, Commands};
+    pub use super::{Args, Cli, Commands};
 }
 
 fn main() {
@@ -134,7 +134,11 @@ fn main() {
     }
 
     match cli.command {
-        Some(Commands::Diff { from, to, align_tags }) => {
+        Some(Commands::Diff {
+            from,
+            to,
+            align_tags,
+        }) => {
             run_diff(from, to, align_tags);
         }
         None => {

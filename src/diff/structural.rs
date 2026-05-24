@@ -39,4 +39,3 @@ pub fn extend_structural_block(
 
     (f1, f2, t1, t2)
 }
-

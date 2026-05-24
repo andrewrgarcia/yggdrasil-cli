@@ -1,20 +1,20 @@
-use std::fs;
 use std::collections::HashSet;
+use std::fs;
 
 use atty::Stream;
 
-use crate::formatters::traits::{DiffFormatter};
 use crate::formatters::diff::{DiffCliFormatter, DiffMarkdownFormatter};
+use crate::formatters::traits::DiffFormatter;
 
-use super::expand::expand_paths;
-use super::matcher::find_block_matches_multi;
 use super::crossfile::group_and_filter_matches;
+use super::expand::expand_paths;
 use super::inline::diff_file_contents;
+use super::matcher::find_block_matches_multi;
 
 /// Main diff orchestrator.
 pub fn run_diff(from: Vec<String>, to: Vec<String>, align_tags: bool) {
     let from_files = expand_paths(&from);
-    let to_files   = expand_paths(&to);
+    let to_files = expand_paths(&to);
 
     let from_set: HashSet<_> = from_files.iter().collect();
     let to_set: HashSet<_> = to_files.iter().collect();
@@ -81,4 +81,3 @@ pub fn run_diff(from: Vec<String>, to: Vec<String>, align_tags: bool) {
         fmt.print_contents(&grouped, &mut *out);
     }
 }
-

@@ -1,14 +1,14 @@
 use crate::cli::Args;
 use crate::scanner::collect_files;
 use crate::snapshot::filelist::prepare_file_list;
-use crate::snapshot::writer::{open_writer, OutputTarget};
 use crate::snapshot::format_selection::select_formatter;
 use crate::snapshot::split::split_files_by_tokens;
+use crate::snapshot::writer::{open_writer, OutputTarget};
 use crate::sniff::sniff_forward_paths;
 
+use atty;
 use std::fs::File;
 use std::io::Write;
-use atty;
 
 /// Inject FUR-style stats into the markdown buffer
 fn finalize_markdown(buf: &[u8], out_path: &str, shard_idx: Option<(usize, usize)>) {
@@ -32,7 +32,6 @@ fn finalize_markdown(buf: &[u8], out_path: &str, shard_idx: Option<(usize, usize
     file.write_all(final_text.as_bytes()).unwrap();
 }
 
-
 /// Emit a Yggdrasil-flavoured sniff header block into any writer.
 fn write_sniff_header(
     entry: &str,
@@ -43,7 +42,12 @@ fn write_sniff_header(
 ) {
     if is_markdown {
         writeln!(out, "<!-- sniff: roots traced from {} -->", entry).unwrap();
-        writeln!(out, "> 🐺 **Yggdrasil Sniff** — branches traced from `{}`", entry).unwrap();
+        writeln!(
+            out,
+            "> 🐺 **Yggdrasil Sniff** — branches traced from `{}`",
+            entry
+        )
+        .unwrap();
         writeln!(out, ">").unwrap();
         writeln!(out, "> The world-tree read the runes of `{}`,", entry).unwrap();
         writeln!(
@@ -137,10 +141,7 @@ pub fn run_snapshot(mut args: Args) {
         let discovered = sniff_forward_paths(target, &args.dir);
 
         if discovered.is_empty() {
-            eprintln!(
-                "⚠️ could not trace '{}'\nunder '{}'",
-                target, args.dir
-            );
+            eprintln!("⚠️ could not trace '{}'\nunder '{}'", target, args.dir);
         } else {
             eprintln!("🌿 {} branches traced", discovered.len());
         }
@@ -225,7 +226,11 @@ pub fn run_snapshot(mut args: Args) {
 
     match &mut writer {
         OutputTarget::Memory(buf) => {
-            let split_k = args.split.as_ref().map(|opt| opt.unwrap_or(32)).unwrap_or(0);
+            let split_k = args
+                .split
+                .as_ref()
+                .map(|opt| opt.unwrap_or(32))
+                .unwrap_or(0);
 
             if split_k > 0 {
                 let target_tokens = split_k * 1000;
@@ -285,7 +290,6 @@ pub fn run_snapshot(mut args: Args) {
                 fmt.print_contents(&prepared, out);
             }
         }
-
 
         //
         //  C) Should never occur

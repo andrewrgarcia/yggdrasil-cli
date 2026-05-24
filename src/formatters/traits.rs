@@ -13,4 +13,3 @@ pub trait DiffFormatter {
     fn print_index(&self, groups: &Vec<GroupedMatches>, out: &mut dyn Write);
     fn print_contents(&self, groups: &Vec<GroupedMatches>, out: &mut dyn Write);
 }
-

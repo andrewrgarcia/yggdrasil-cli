@@ -34,7 +34,10 @@ mod tests {
 
     #[test]
     fn converts_backslashes() {
-        assert_eq!(normalize_pattern("src\\scanner\\mod.rs"), "src/scanner/mod.rs");
+        assert_eq!(
+            normalize_pattern("src\\scanner\\mod.rs"),
+            "src/scanner/mod.rs"
+        );
     }
 
     #[test]

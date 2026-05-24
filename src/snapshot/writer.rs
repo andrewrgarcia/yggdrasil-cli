@@ -1,6 +1,6 @@
+use crate::cli::Args;
 use std::fs::File;
 use std::io::{self, Write};
-use crate::cli::Args;
 
 /// The writer can be:
 /// - Memory(Vec<u8>): buffer everything so we can inject metadata later
@@ -36,12 +36,8 @@ impl Write for OutputTarget {
                 inner.extend_from_slice(buf);
                 Ok(buf.len())
             }
-            OutputTarget::Stdout => {
-                io::stdout().write(buf)
-            }
-            OutputTarget::File(file) => {
-                file.write(buf)
-            }
+            OutputTarget::Stdout => io::stdout().write(buf),
+            OutputTarget::File(file) => file.write(buf),
         }
     }
 

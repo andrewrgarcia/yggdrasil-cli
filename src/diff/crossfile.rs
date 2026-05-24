@@ -1,22 +1,23 @@
 use std::collections::HashMap;
 
-use crate::types::{BlockMatch, BlockWithVote, GroupedMatches};
 use super::block_hash::hash_block;
+use crate::types::{BlockMatch, BlockWithVote, GroupedMatches};
 
 /// Group block matches by (from_file, to_file) and detect duplicates.
 pub fn group_and_filter_matches(
     matches: Vec<BlockMatch>,
     from_files: &[(String, String)],
 ) -> Vec<GroupedMatches> {
-    let mut grouped: std::collections::BTreeMap<
-        (String, String),
-        Vec<BlockWithVote>
-    > = std::collections::BTreeMap::new();
+    let mut grouped: std::collections::BTreeMap<(String, String), Vec<BlockWithVote>> =
+        std::collections::BTreeMap::new();
 
     // Map file → lines
     let mut file_lines = HashMap::new();
     for (fname, content) in from_files {
-        file_lines.insert(fname.clone(), content.lines().map(|s| s.to_string()).collect::<Vec<_>>());
+        file_lines.insert(
+            fname.clone(),
+            content.lines().map(|s| s.to_string()).collect::<Vec<_>>(),
+        );
     }
 
     let mut seen_blocks = HashMap::<u64, bool>::new();
@@ -41,12 +42,18 @@ pub fn group_and_filter_matches(
         grouped
             .entry((m.from_file.clone(), m.to_file.clone()))
             .or_default()
-            .push(BlockWithVote { block: m, is_addition });
+            .push(BlockWithVote {
+                block: m,
+                is_addition,
+            });
     }
 
     grouped
         .into_iter()
-        .map(|((from, to), blocks)| GroupedMatches { from_file: from, to_file: to, blocks })
+        .map(|((from, to), blocks)| GroupedMatches {
+            from_file: from,
+            to_file: to,
+            blocks,
+        })
         .collect()
 }
-

@@ -14,11 +14,7 @@ pub fn estimate_file_tokens(path: &str) -> usize {
 }
 
 /// Partition files into token-bounded packets
-pub fn split_files_by_tokens(
-    files: Vec<FileEntry>,
-    target_tokens: usize,
-) -> Vec<Vec<FileEntry>> {
-
+pub fn split_files_by_tokens(files: Vec<FileEntry>, target_tokens: usize) -> Vec<Vec<FileEntry>> {
     let mut packets: Vec<Vec<FileEntry>> = Vec::new();
     let mut current: Vec<FileEntry> = Vec::new();
     let mut current_tokens = 0usize;

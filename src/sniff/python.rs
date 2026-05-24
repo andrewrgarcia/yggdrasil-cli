@@ -18,7 +18,7 @@ pub fn extract_python_imports(source: &str) -> Vec<String> {
     let mut imports = Vec::new();
     let mut in_docstring = false;
     let mut docstring_delim = "";
-    let mut in_parens = false;   // inside a multi-line import (...)
+    let mut in_parens = false; // inside a multi-line import (...)
 
     for line in source.lines() {
         let trimmed = line.trim();
@@ -70,7 +70,7 @@ pub fn extract_python_imports(source: &str) -> Vec<String> {
                 let module = part
                     .trim()
                     .split_whitespace()
-                    .next()           // drop "as alias"
+                    .next() // drop "as alias"
                     .unwrap_or("")
                     .to_string();
                 if !module.is_empty() {
@@ -107,7 +107,8 @@ mod tests {
 
     #[test]
     fn test_basic_imports() {
-        let src = "import os\nimport sys\nfrom pathlib import Path\nfrom a.b.c import Thing\n\nx = 1\n";
+        let src =
+            "import os\nimport sys\nfrom pathlib import Path\nfrom a.b.c import Thing\n\nx = 1\n";
         let got = extract_python_imports(src);
         assert_eq!(got, vec!["os", "sys", "pathlib", "a.b.c"]);
     }
@@ -168,16 +169,19 @@ from graveyard.meta.metadata_builder import build_n_process_metadata
 from series_xai.shap_explainers import explain_macrovars, explain_metadata
 ";
         let got = extract_python_imports(src);
-        assert_eq!(got, vec![
-            "os",
-            "numpy",
-            "pandas",
-            "graveyard.configs.macro_config",
-            "graveyard.meta.preprocess",
-            "graveyard.meta.selector",
-            "graveyard.meta.selector.visualizations.core",
-            "graveyard.meta.metadata_builder",
-            "series_xai.shap_explainers",
-        ]);
+        assert_eq!(
+            got,
+            vec![
+                "os",
+                "numpy",
+                "pandas",
+                "graveyard.configs.macro_config",
+                "graveyard.meta.preprocess",
+                "graveyard.meta.selector",
+                "graveyard.meta.selector.visualizations.core",
+                "graveyard.meta.metadata_builder",
+                "series_xai.shap_explainers",
+            ]
+        );
     }
 }

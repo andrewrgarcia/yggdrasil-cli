@@ -1,6 +1,6 @@
+use colored::*;
 use std::fs;
 use std::io::Write;
-use colored::*;
 
 use crate::types::FileEntry;
 
@@ -25,7 +25,11 @@ impl OutputFormatter for CliFormatter {
             writeln!(out, "{}", link).unwrap();
         } else {
             writeln!(out, "✨ Project Snapshot: {}", root).unwrap();
-            writeln!(out, "*Made with Yggdrasil* (https://crates.io/crates/yggdrasil-cli)").unwrap();
+            writeln!(
+                out,
+                "*Made with Yggdrasil* (https://crates.io/crates/yggdrasil-cli)"
+            )
+            .unwrap();
         }
 
         writeln!(
@@ -38,13 +42,12 @@ impl OutputFormatter for CliFormatter {
     }
 
     fn print_index(&self, files: &Vec<FileEntry>, out: &mut dyn Write) {
-
         let path_width = files
-        .iter()
-        .map(|f| f.path.len() + 2) // space + icon
-        .max()
-        .unwrap_or(0)
-        .max(4);
+            .iter()
+            .map(|f| f.path.len() + 2) // space + icon
+            .max()
+            .unwrap_or(0)
+            .max(4);
 
         let line_width = files
             .iter()
@@ -85,22 +88,22 @@ impl OutputFormatter for CliFormatter {
             line_w = line_width,
             word_w = word_width,
             token_w = token_width
-        ).unwrap();
+        )
+        .unwrap();
 
         writeln!(out).unwrap();
 
         let mut total_lines = 0;
 
         for entry in files {
-
             total_lines += entry.line_count;
 
             if self.colored {
                 writeln!(
                     out,
                     "{} {:<path_w$} : {:>line_w$} | {:>word_w$} | {:>token_w$}",
-                    "📄".truecolor(255,255,0),
-                    entry.path.truecolor(0,255,255),
+                    "📄".truecolor(255, 255, 0),
+                    entry.path.truecolor(0, 255, 255),
                     entry.line_count,
                     entry.word_count,
                     entry.token_est,
@@ -108,7 +111,8 @@ impl OutputFormatter for CliFormatter {
                     line_w = line_width,
                     word_w = word_width,
                     token_w = token_width
-                ).unwrap();
+                )
+                .unwrap();
             } else {
                 writeln!(
                     out,
@@ -121,7 +125,8 @@ impl OutputFormatter for CliFormatter {
                     line_w = line_width,
                     word_w = word_width,
                     token_w = token_width
-                ).unwrap();
+                )
+                .unwrap();
             }
         }
 
@@ -131,8 +136,9 @@ impl OutputFormatter for CliFormatter {
         writeln!(
             out,
             "\n{}",
-            "===============================================".truecolor(255,255,0)
-        ).unwrap();
+            "===============================================".truecolor(255, 255, 0)
+        )
+        .unwrap();
 
         if self.colored {
             writeln!(out, "{}", "📑 File Contents".bright_magenta().bold()).unwrap();
@@ -150,7 +156,8 @@ impl OutputFormatter for CliFormatter {
                     "<<< FILE START:".bright_magenta().bold(),
                     entry.path,
                     ">>>".bright_magenta().bold()
-                ).unwrap();
+                )
+                .unwrap();
             } else {
                 writeln!(out, "<<< FILE START: {} >>>", entry.path).unwrap();
             }
@@ -167,7 +174,8 @@ impl OutputFormatter for CliFormatter {
                     "<<< FILE END:".bright_magenta().bold(),
                     entry.path,
                     ">>>".bright_magenta().bold()
-                ).unwrap();
+                )
+                .unwrap();
             } else {
                 writeln!(out, "<<< FILE END: {} >>>", entry.path).unwrap();
             }
@@ -176,7 +184,6 @@ impl OutputFormatter for CliFormatter {
         }
     }
 }
-
 
 #[cfg(test)]
 mod tests {
@@ -196,7 +203,7 @@ mod tests {
                 line_count: 5,
                 word_count: 12,
                 token_est: 16,
-            }
+            },
         ]
     }
 
