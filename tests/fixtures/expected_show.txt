@@ -22,7 +22,7 @@ path                                  : lines | words | tokens
 📄 ./src/formatters/diff/cli.rs          :   123 |   295 |    392
 📄 ./src/formatters/diff/markdown.rs     :    61 |   187 |    249
 📄 ./src/formatters/diff/mod.rs          :     5 |    12 |     16
-📄 ./src/formatters/markdown.rs          :   345 |   491 |    653
+📄 ./src/formatters/markdown.rs          :   384 |   519 |    690
 📄 ./src/formatters/metadata.rs          :    62 |   106 |    141
 📄 ./src/formatters/mod.rs               :     9 |    24 |     32
 📄 ./src/formatters/output/cli.rs        :   145 |   394 |    524
@@ -50,7 +50,7 @@ path                                  : lines | words | tokens
 📄 ./src/utils/mod.rs                    :     4 |     9 |     12
 
 ====
-📦 Total LOC: 2745
+📦 Total LOC: 2784
 
 ===============================================
 📑 File Contents
