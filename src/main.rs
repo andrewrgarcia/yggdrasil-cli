@@ -101,6 +101,10 @@ pub struct Args {
     #[arg(long, num_args = 0..=1, value_name = "K")]
     pub split: Option<Option<usize>>,
 
+    /// Package generated file output into a ZIP archive
+    #[arg(long)]
+    pub zip: bool,
+
     /// Write output to file instead of stdout
     #[arg(long)]
     pub out: Option<String>,

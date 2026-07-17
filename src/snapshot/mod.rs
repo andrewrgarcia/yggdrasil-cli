@@ -1,3 +1,4 @@
+pub mod archive;
 pub mod filelist;
 pub mod format_selection;
 pub mod run;

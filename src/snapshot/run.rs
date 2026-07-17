@@ -1,5 +1,6 @@
 use crate::cli::Args;
 use crate::scanner::collect_files;
+use crate::snapshot::archive::{archive_path_for, write_zip_archive};
 use crate::snapshot::filelist::prepare_file_list;
 use crate::snapshot::format_selection::select_formatter;
 use crate::snapshot::split::split_files_by_tokens;
@@ -7,11 +8,11 @@ use crate::snapshot::writer::{open_writer, OutputTarget};
 use crate::sniff::sniff_forward_paths;
 
 use atty;
-use std::fs::File;
-use std::io::Write;
+use std::fs;
+use std::path::Path;
 
-/// Inject FUR-style stats into the markdown buffer
-fn finalize_markdown(buf: &[u8], out_path: &str, shard_idx: Option<(usize, usize)>) {
+/// Inject FUR-style stats into the Markdown buffer.
+fn finalize_markdown(buf: &[u8], shard_idx: Option<(usize, usize)>) -> Vec<u8> {
     let text = String::from_utf8_lossy(buf);
 
     let word_count = text.split_whitespace().count();
@@ -26,10 +27,16 @@ fn finalize_markdown(buf: &[u8], out_path: &str, shard_idx: Option<(usize, usize
         shard_line, word_count, token_est
     );
 
-    let final_text = text.replacen("## INDEX", &inject, 1);
+    text.replacen("## INDEX", &inject, 1).into_bytes()
+}
 
-    let mut file = File::create(out_path).expect("Failed to write final markdown file");
-    file.write_all(final_text.as_bytes()).unwrap();
+/// Return only the file name used inside the ZIP archive.
+fn archive_entry_name(output_path: &str) -> String {
+    Path::new(output_path)
+        .file_name()
+        .and_then(|name| name.to_str())
+        .unwrap_or(output_path)
+        .to_string()
 }
 
 /// Emit a Yggdrasil-flavoured sniff header block into any writer.
@@ -235,8 +242,10 @@ pub fn run_snapshot(mut args: Args) {
             if split_k > 0 {
                 let target_tokens = split_k * 1000;
                 let packets = split_files_by_tokens(prepared, target_tokens);
-                let base = args.out.as_ref().unwrap().trim_end_matches(".md");
+                let output_path = args.out.as_ref().unwrap();
+                let base = output_path.trim_end_matches(".md");
                 let total = packets.len();
+                let mut archive_entries = Vec::new();
 
                 for (i, packet) in packets.iter().enumerate() {
                     let mut local_buf = Vec::new();
@@ -252,8 +261,28 @@ pub fn run_snapshot(mut args: Args) {
                         fmt.print_contents(packet, &mut local_buf);
                     }
 
-                    let out_path = format!("{}.shard{:02}.md", base, i + 1);
-                    finalize_markdown(&local_buf, &out_path, Some((i + 1, total)));
+                    let shard_path = format!("{}.shard{:02}.md", base, i + 1);
+                    let finalized =
+                        finalize_markdown(&local_buf, Some((i + 1, total)));
+
+                    if args.zip {
+                        archive_entries.push((
+                            archive_entry_name(&shard_path),
+                            finalized,
+                        ));
+                    } else {
+                        fs::write(&shard_path, finalized)
+                            .expect("Failed to write final Markdown shard");
+                    }
+                }
+
+                if args.zip {
+                    let archive_path = archive_path_for(output_path);
+
+                    write_zip_archive(&archive_path, &archive_entries)
+                        .expect("Failed to write ZIP archive");
+
+                    eprintln!("📦 {}", archive_path.display());
                 }
             } else {
                 if let Some((ref entry, ref paths)) = sniff_meta {
@@ -267,8 +296,24 @@ pub fn run_snapshot(mut args: Args) {
                     fmt.print_contents(&prepared, buf);
                 }
 
-                let out_path = args.out.as_ref().unwrap();
-                finalize_markdown(buf.as_slice(), out_path, None);
+                let output_path = args.out.as_ref().unwrap();
+                let finalized = finalize_markdown(buf.as_slice(), None);
+
+                if args.zip {
+                    let archive_path = archive_path_for(output_path);
+                    let entries = vec![(
+                        archive_entry_name(output_path),
+                        finalized,
+                    )];
+
+                    write_zip_archive(&archive_path, &entries)
+                        .expect("Failed to write ZIP archive");
+
+                    eprintln!("📦 {}", archive_path.display());
+                } else {
+                    fs::write(output_path, finalized)
+                        .expect("Failed to write final Markdown file");
+                }
             }
         }
 
