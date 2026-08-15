@@ -45,7 +45,7 @@ path                                 : lines | words | tokens
 📄 ./src/sniff/mod.rs                   :     4 |     9 |     12
 📄 ./src/sniff/python.rs                :   187 |   544 |    724
 📄 ./src/sniff/resolve.rs               :   169 |   485 |    645
-📄 ./src/tree/mod.rs                    :    17 |   106 |    141
+📄 ./src/tree/mod.rs                    :    17 |   126 |    168
 📄 ./src/tree/node.rs                   :   259 |   790 |   1051
 📄 ./src/tree/render.rs                 :   446 |  1288 |   1713
 📄 ./src/tree/run.rs                    :    73 |   232 |    309

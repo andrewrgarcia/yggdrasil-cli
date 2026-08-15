@@ -11,7 +11,7 @@ pub mod render;
 pub mod run;
 pub mod scan;
 
-pub use node::{RawEntry, Stats, TreeNode};
-pub use render::{human_tokens, render_list, render_tree, RenderOpts};
+// viceroy: node/render/scan re-exports dropped — `mod tree` is private to the
+// binary, so nothing outside can consume them, and the submodules are already
+// `pub` for in-crate use. Only what main.rs calls stays.
 pub use run::{run_list, run_tree, TreeRequest};
-pub use scan::{scan_tree, ScanOpts};
