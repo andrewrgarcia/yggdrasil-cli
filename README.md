@@ -1,7 +1,7 @@
 
 <!-- LOGO -->
 <p align="center">
-  <img width="200" alt="runics" src="https://github.com/user-attachments/assets/cb19e82a-ac71-4047-9e4e-b1f6215ca838" />
+  <img width="200" alt="ygg" src="https://github.com/user-attachments/assets/5b59f4b6-10a0-4258-b0c3-06f21da08422" />
 </p>
 
 <h1 align="center"> Yggdrasil</h1>
