@@ -11,6 +11,8 @@ pub struct RenderOpts {
     pub max_depth: Option<usize>,
     pub colored: bool,
     pub show_stats: bool,
+    /// Print each file's declared symbols beneath it.
+    pub show_symbols: bool,
 }
 
 impl Default for RenderOpts {
@@ -19,6 +21,7 @@ impl Default for RenderOpts {
             max_depth: None,
             colored: false,
             show_stats: true,
+            show_symbols: false,
         }
     }
 }
@@ -86,6 +89,32 @@ fn stats_cell(node: &TreeNode, opts: &RenderOpts) -> String {
     }
 }
 
+/// Symbol lines hang off a file node, under the same continuation stem the
+/// node's children would have used.
+///
+// viceroy: extracted from walk() — symbol emission split from tree traversal
+// so the prefix arithmetic lives in exactly one place.
+fn write_symbols(node: &TreeNode, prefix: &str, opts: &RenderOpts, out: &mut dyn Write) {
+    if !opts.show_symbols || node.is_dir || node.symbols.is_empty() {
+        return;
+    }
+
+    for symbol in &node.symbols {
+        let stem = format!("{}    ◆ ", prefix);
+        if opts.colored {
+            writeln!(
+                out,
+                "{}{}",
+                stem.truecolor(70, 70, 70),
+                symbol.truecolor(190, 150, 255)
+            )
+            .unwrap();
+        } else {
+            writeln!(out, "{}{}", stem, symbol).unwrap();
+        }
+    }
+}
+
 fn descends(depth: usize, opts: &RenderOpts) -> bool {
     match opts.max_depth {
         Some(max) => depth < max,
@@ -103,7 +132,14 @@ fn measure(node: &TreeNode, depth: usize, indent: usize, opts: &RenderOpts, max:
     }
 }
 
-fn walk(node: &TreeNode, depth: usize, prefix: &str, width: usize, opts: &RenderOpts, out: &mut dyn Write) {
+fn walk(
+    node: &TreeNode,
+    depth: usize,
+    prefix: &str,
+    width: usize,
+    opts: &RenderOpts,
+    out: &mut dyn Write,
+) {
     let total = node.children.len();
 
     for (i, child) in node.children.iter().enumerate() {
@@ -130,9 +166,15 @@ fn walk(node: &TreeNode, depth: usize, prefix: &str, width: usize, opts: &Render
         )
         .unwrap();
 
-        if child.is_dir && descends(depth, opts) {
-            let next = format!("{}{}", prefix, if is_last { "    " } else { "│   " });
-            walk(child, depth + 1, &next, width, opts, out);
+        // Continuation stem for anything hanging below this child.
+        let next = format!("{}{}", prefix, if is_last { "    " } else { "│   " });
+
+        if child.is_dir {
+            if descends(depth, opts) {
+                walk(child, depth + 1, &next, width, opts, out);
+            }
+        } else {
+            write_symbols(child, &next, opts, out);
         }
     }
 }
@@ -175,6 +217,8 @@ pub fn render_list(root: &TreeNode, opts: &RenderOpts, out: &mut dyn Write) {
             stats_cell(child, opts)
         )
         .unwrap();
+
+        write_symbols(child, "  ", opts, out);
     }
 
     write_footer(root, opts, out);
@@ -216,6 +260,14 @@ mod tests {
                 words: tokens,
                 tokens,
             },
+            ..Default::default()
+        }
+    }
+
+    fn with_symbols(rel: &[&str], tokens: usize, symbols: &[&str]) -> RawEntry {
+        RawEntry {
+            symbols: symbols.iter().map(|s| s.to_string()).collect(),
+            ..entry(rel, false, tokens)
         }
     }
 
@@ -227,7 +279,7 @@ mod tests {
                 entry(&["src"], true, 0),
                 entry(&["src", "deep"], true, 0),
                 entry(&["src", "deep", "buried.rs"], false, 300),
-                entry(&["src", "main.rs"], false, 500),
+                with_symbols(&["src", "main.rs"], 500, &["main", "Cli"]),
                 entry(&["README.md"], false, 100),
             ],
         )
@@ -277,7 +329,6 @@ mod tests {
 
     #[test]
     fn collapsed_directory_still_reports_full_subtree_cost() {
-        // src/ is collapsed at depth 0 but must still show 500 + 300 = 800.
         let out = render(RenderOpts {
             max_depth: Some(0),
             colored: false,
@@ -293,5 +344,54 @@ mod tests {
         assert_eq!(human_tokens(999), "999");
         assert_eq!(human_tokens(1_718), "1.7k");
         assert_eq!(human_tokens(2_400_000), "2.4M");
+    }
+
+    #[test]
+    fn symbols_are_hidden_by_default() {
+        let out = render(RenderOpts {
+            colored: false,
+            ..Default::default()
+        });
+        assert!(!out.contains("◆"));
+    }
+
+    #[test]
+    fn symbols_hang_below_their_file() {
+        let out = render(RenderOpts {
+            colored: false,
+            show_symbols: true,
+            ..Default::default()
+        });
+        assert!(out.contains("◆ main"));
+        assert!(out.contains("◆ Cli"));
+
+        let lines: Vec<&str> = out.lines().collect();
+        let file_at = lines.iter().position(|l| l.contains("main.rs")).unwrap();
+        assert!(lines[file_at + 1].contains("◆ main"));
+    }
+
+    #[test]
+    fn symbol_stem_continues_the_parent_pipe() {
+        // main.rs is NOT the last child of src/, so its symbol lines must
+        // carry a `│` at src/'s level or the tree visually breaks.
+        let out = render(RenderOpts {
+            colored: false,
+            show_symbols: true,
+            ..Default::default()
+        });
+        let sym_line = out.lines().find(|l| l.contains("◆ main")).unwrap();
+        assert!(sym_line.starts_with("│   "), "got: {:?}", sym_line);
+    }
+
+    #[test]
+    fn collapsed_files_emit_no_symbols() {
+        // At depth 0, main.rs is never printed — neither are its symbols.
+        let out = render(RenderOpts {
+            max_depth: Some(0),
+            colored: false,
+            show_symbols: true,
+            ..Default::default()
+        });
+        assert!(!out.contains("◆"));
     }
 }

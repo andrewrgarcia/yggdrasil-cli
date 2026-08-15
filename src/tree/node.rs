@@ -29,12 +29,16 @@ impl Stats {
 }
 
 /// A flat scan result, before it is folded into the tree.
-#[derive(Debug, Clone)]
+///
+/// `Default` is derived so construction sites (and tests) survive new fields.
+#[derive(Debug, Clone, Default)]
 pub struct RawEntry {
     /// Path components relative to the scan root.
     pub rel: Vec<String>,
     pub is_dir: bool,
     pub stats: Stats,
+    /// Declared top-level symbols, when `--symbols` is on. Files only.
+    pub symbols: Vec<String>,
 }
 
 #[derive(Debug, Clone)]
@@ -46,6 +50,8 @@ pub struct TreeNode {
     pub stats: Stats,
     pub file_count: usize,
     pub dir_count: usize,
+    /// Files only. Empty unless symbol extraction was requested.
+    pub symbols: Vec<String>,
     pub children: Vec<TreeNode>,
 }
 
@@ -58,6 +64,7 @@ impl TreeNode {
             stats: Stats::default(),
             file_count: 0,
             dir_count: 0,
+            symbols: Vec::new(),
             children: Vec::new(),
         }
     }
@@ -94,6 +101,7 @@ impl TreeNode {
             let child = &mut self.children[idx];
             child.is_dir = entry.is_dir;
             child.stats = entry.stats;
+            child.symbols = entry.symbols.clone();
         } else {
             self.children[idx].is_dir = true;
             self.children[idx].insert(&comps[1..], entry);
@@ -165,6 +173,7 @@ mod tests {
                 words: tokens,
                 tokens,
             },
+            ..Default::default()
         }
     }
 
@@ -172,7 +181,7 @@ mod tests {
         RawEntry {
             rel: rel.iter().map(|s| s.to_string()).collect(),
             is_dir: true,
-            stats: Stats::default(),
+            ..Default::default()
         }
     }
 
@@ -221,5 +230,20 @@ mod tests {
         assert!(a.children[0].is_dir);
         assert!(!a.children[0].children[0].is_dir);
         assert_eq!(root.stats.tokens, 10);
+    }
+
+    #[test]
+    fn symbols_survive_the_fold() {
+        let entry = RawEntry {
+            rel: vec!["src".into(), "lib.rs".into()],
+            is_dir: false,
+            symbols: vec!["parse".into(), "Config".into()],
+            ..Default::default()
+        };
+        let root = build_tree("r".into(), Path::new("."), vec![entry]);
+        let lib = &root.children[0].children[0];
+        assert_eq!(lib.symbols, vec!["parse", "Config"]);
+        // Directories never carry symbols.
+        assert!(root.children[0].symbols.is_empty());
     }
 }

@@ -73,6 +73,14 @@ pub enum Commands {
         #[arg(long)]
         no_stats: bool,
 
+        /// Show each file's declared symbols (fn / struct / class / …)
+        #[arg(long, short = 's')]
+        symbols: bool,
+
+        /// Cap symbols listed per file (default 10)
+        #[arg(long, value_name = "N")]
+        max_symbols: Option<usize>,
+
         /// Exclude these paths/globs from the tree
         #[arg(long, num_args = 1.., value_delimiter = ' ')]
         ignore: Vec<String>,
@@ -198,9 +206,21 @@ fn main() {
             no_ignore,
             dirs_only,
             no_stats,
+            symbols,
+            max_symbols,
             ignore,
         }) => {
-            tree::run_tree(&path, depth, all, no_ignore, dirs_only, no_stats, ignore);
+            tree::run_tree(tree::TreeRequest {
+                path,
+                depth,
+                all,
+                no_ignore,
+                dirs_only,
+                no_stats,
+                symbols,
+                max_symbols,
+                ignore,
+            });
         }
 
         None => {

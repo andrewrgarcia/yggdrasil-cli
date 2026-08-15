@@ -2,6 +2,8 @@ use std::path::{Component, Path, PathBuf};
 
 use ignore::WalkBuilder;
 
+use crate::formatters::metadata::infer_metadata;
+use crate::formatters::symbols::extract_symbols;
 use crate::scanner::filters::matches_filters;
 
 use super::node::{build_tree, RawEntry, Stats, TreeNode};
@@ -14,16 +16,36 @@ pub struct ScanOpts {
     pub no_ignore: bool,
     /// Render directories only.
     pub dirs_only: bool,
+    /// Extract declared symbols from each file.
+    pub symbols: bool,
+    /// Cap symbols shown per file. Note: `extract_symbols` itself hard-caps
+    /// at 10, so values above that have no effect today.
+    pub max_symbols: usize,
     /// Extra exclusion patterns (same semantics as --ignore).
     pub ignore_patterns: Vec<String>,
 }
 
-fn file_stats(path: &Path) -> Stats {
-    match std::fs::read_to_string(path) {
-        Ok(text) => Stats::from_text(&text),
+/// One read per file, feeding both the stats and the symbol pass.
+///
+// viceroy: extracted from scan_tree() — the read/parse of a single file split
+// from the walk, so symbol extraction cannot accidentally add a second read.
+fn read_file_facts(path: &Path, opts: &ScanOpts) -> (Stats, Vec<String>) {
+    let Ok(text) = std::fs::read_to_string(path) else {
         // Binary or unreadable: it exists, it just has no token weight.
-        Err(_) => Stats::default(),
+        return (Stats::default(), Vec::new());
+    };
+
+    let stats = Stats::from_text(&text);
+
+    if !opts.symbols {
+        return (stats, Vec::new());
     }
+
+    let lang = infer_metadata(&path.to_string_lossy()).lang;
+    let mut symbols = extract_symbols(&lang, &text);
+    symbols.truncate(opts.max_symbols);
+
+    (stats, symbols)
 }
 
 fn root_display_name(root: &Path, raw: &str) -> String {
@@ -89,16 +111,17 @@ pub fn scan_tree(root: &str, opts: &ScanOpts) -> TreeNode {
             continue;
         }
 
-        let stats = if is_dir {
-            Stats::default()
+        let (stats, symbols) = if is_dir {
+            (Stats::default(), Vec::new())
         } else {
-            file_stats(path)
+            read_file_facts(path, opts)
         };
 
         entries.push(RawEntry {
             rel: comps,
             is_dir,
             stats,
+            symbols,
         });
     }
 
