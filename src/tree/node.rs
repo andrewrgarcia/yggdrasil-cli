@@ -28,6 +28,15 @@ impl Stats {
     }
 }
 
+/// Declared symbols for a file.
+///
+/// `None` — no extractor for this language (a `.toml`, a `.md`).
+/// `Some([])` — parsed successfully, declared nothing.
+///
+/// The distinction is the difference between silence and a claim, and the
+/// renderer needs it to avoid implying a `.md` file is empty of structure.
+pub type Symbols = Option<Vec<String>>;
+
 /// A flat scan result, before it is folded into the tree.
 ///
 /// `Default` is derived so construction sites (and tests) survive new fields.
@@ -37,8 +46,8 @@ pub struct RawEntry {
     pub rel: Vec<String>,
     pub is_dir: bool,
     pub stats: Stats,
-    /// Declared top-level symbols, when `--symbols` is on. Files only.
-    pub symbols: Vec<String>,
+    /// Files only; always `None` for directories.
+    pub symbols: Symbols,
 }
 
 #[derive(Debug, Clone)]
@@ -50,8 +59,8 @@ pub struct TreeNode {
     pub stats: Stats,
     pub file_count: usize,
     pub dir_count: usize,
-    /// Files only. Empty unless symbol extraction was requested.
-    pub symbols: Vec<String>,
+    /// Files only. `None` unless symbol extraction ran and supported the file.
+    pub symbols: Symbols,
     pub children: Vec<TreeNode>,
 }
 
@@ -64,7 +73,7 @@ impl TreeNode {
             stats: Stats::default(),
             file_count: 0,
             dir_count: 0,
-            symbols: Vec::new(),
+            symbols: None,
             children: Vec::new(),
         }
     }
@@ -237,13 +246,14 @@ mod tests {
         let entry = RawEntry {
             rel: vec!["src".into(), "lib.rs".into()],
             is_dir: false,
-            symbols: vec!["parse".into(), "Config".into()],
+            symbols: Some(vec!["parse".into(), "Config".into()]),
             ..Default::default()
         };
         let root = build_tree("r".into(), Path::new("."), vec![entry]);
         let lib = &root.children[0].children[0];
-        assert_eq!(lib.symbols, vec!["parse", "Config"]);
+
+        assert_eq!(lib.symbols, Some(vec!["parse".into(), "Config".into()]));
         // Directories never carry symbols.
-        assert!(root.children[0].symbols.is_empty());
+        assert!(root.children[0].symbols.is_none());
     }
 }

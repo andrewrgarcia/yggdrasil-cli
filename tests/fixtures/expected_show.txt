@@ -25,7 +25,7 @@ path                                 : lines | words | tokens
 📄 ./src/formatters/markdown.rs         :   384 |   519 |    690
 📄 ./src/formatters/metadata.rs         :    62 |   106 |    141
 📄 ./src/formatters/mod.rs              :     9 |    24 |     32
-📄 ./src/formatters/symbols.rs          :    55 |    86 |    114
+📄 ./src/formatters/symbols.rs          :   491 |  1479 |   1967
 📄 ./src/formatters/traits.rs           :    15 |    61 |     81
 📄 ./src/main.rs                        :   230 |   773 |   1028
 📄 ./src/scanner/collect.rs             :   108 |   262 |    348
@@ -46,15 +46,15 @@ path                                 : lines | words | tokens
 📄 ./src/sniff/python.rs                :   187 |   544 |    724
 📄 ./src/sniff/resolve.rs               :   169 |   485 |    645
 📄 ./src/tree/mod.rs                    :    17 |   106 |    141
-📄 ./src/tree/node.rs                   :   249 |   731 |    972
-📄 ./src/tree/render.rs                 :   397 |  1139 |   1515
+📄 ./src/tree/node.rs                   :   259 |   790 |   1051
+📄 ./src/tree/render.rs                 :   446 |  1288 |   1713
 📄 ./src/tree/run.rs                    :    73 |   232 |    309
-📄 ./src/tree/scan.rs                   :   129 |   399 |    531
+📄 ./src/tree/scan.rs                   :   134 |   420 |    559
 📄 ./src/types.rs                       :    29 |    71 |     94
 📄 ./src/utils/mod.rs                   :     4 |     9 |     12
 
 ====
-📦 Total LOC: 3756
+📦 Total LOC: 4256
 
 ===============================================
 📑 File Contents

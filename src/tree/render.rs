@@ -95,12 +95,36 @@ fn stats_cell(node: &TreeNode, opts: &RenderOpts) -> String {
 // viceroy: extracted from walk() — symbol emission split from tree traversal
 // so the prefix arithmetic lives in exactly one place.
 fn write_symbols(node: &TreeNode, prefix: &str, opts: &RenderOpts, out: &mut dyn Write) {
-    if !opts.show_symbols || node.is_dir || node.symbols.is_empty() {
+    if !opts.show_symbols || node.is_dir {
         return;
     }
 
-    for symbol in &node.symbols {
-        let stem = format!("{}    ◆ ", prefix);
+    // None = we do not parse this language. Saying nothing is the honest
+    // output; "(none)" would claim a .md file declares nothing, which is
+    // a statement we did not earn.
+    let Some(symbols) = node.symbols.as_ref() else {
+        return;
+    };
+
+    let stem = format!("{}    ◆ ", prefix);
+
+    if symbols.is_empty() {
+        let note = "(no top-level declarations)";
+        if opts.colored {
+            writeln!(
+                out,
+                "{}{}",
+                stem.truecolor(70, 70, 70),
+                note.truecolor(110, 110, 110)
+            )
+            .unwrap();
+        } else {
+            writeln!(out, "{}{}", stem, note).unwrap();
+        }
+        return;
+    }
+
+    for symbol in symbols {
         if opts.colored {
             writeln!(
                 out,
@@ -266,9 +290,34 @@ mod tests {
 
     fn with_symbols(rel: &[&str], tokens: usize, symbols: &[&str]) -> RawEntry {
         RawEntry {
-            symbols: symbols.iter().map(|s| s.to_string()).collect(),
+            symbols: Some(symbols.iter().map(|s| s.to_string()).collect()),
             ..entry(rel, false, tokens)
         }
+    }
+
+    fn symbol_render(entries: Vec<RawEntry>) -> String {
+        let root = build_tree("proj".into(), Path::new("."), entries);
+        let opts = RenderOpts {
+            colored: false,
+            show_symbols: true,
+            ..Default::default()
+        };
+        let mut buf = Vec::new();
+        render_tree(&root, &opts, &mut buf);
+        String::from_utf8(buf).unwrap()
+    }
+
+    #[test]
+    fn parsed_but_empty_file_says_so() {
+        let out = symbol_render(vec![with_symbols(&["empty.rs"], 10, &[])]);
+        assert!(out.contains("◆ (no top-level declarations)"), "got: {}", out);
+    }
+
+    #[test]
+    fn unparsed_language_stays_silent() {
+        // README.md has symbols: None — no marker, no claim.
+        let out = symbol_render(vec![entry(&["README.md"], false, 10)]);
+        assert!(!out.contains("◆"), "got: {}", out);
     }
 
     fn sample() -> TreeNode {

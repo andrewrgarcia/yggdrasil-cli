@@ -3,10 +3,10 @@ use std::path::{Component, Path, PathBuf};
 use ignore::WalkBuilder;
 
 use crate::formatters::metadata::infer_metadata;
-use crate::formatters::symbols::extract_symbols;
+use crate::formatters::symbols::{extract_symbols_capped, supports_symbols};
 use crate::scanner::filters::matches_filters;
 
-use super::node::{build_tree, RawEntry, Stats, TreeNode};
+use super::node::{build_tree, RawEntry, Stats, Symbols, TreeNode};
 
 #[derive(Debug, Clone, Default)]
 pub struct ScanOpts {
@@ -29,23 +29,28 @@ pub struct ScanOpts {
 ///
 // viceroy: extracted from scan_tree() — the read/parse of a single file split
 // from the walk, so symbol extraction cannot accidentally add a second read.
-fn read_file_facts(path: &Path, opts: &ScanOpts) -> (Stats, Vec<String>) {
+fn read_file_facts(path: &Path, opts: &ScanOpts) -> (Stats, Symbols) {
     let Ok(text) = std::fs::read_to_string(path) else {
         // Binary or unreadable: it exists, it just has no token weight.
-        return (Stats::default(), Vec::new());
+        return (Stats::default(), None);
     };
 
     let stats = Stats::from_text(&text);
 
     if !opts.symbols {
-        return (stats, Vec::new());
+        return (stats, None);
     }
 
     let lang = infer_metadata(&path.to_string_lossy()).lang;
-    let mut symbols = extract_symbols(&lang, &text);
-    symbols.truncate(opts.max_symbols);
 
-    (stats, symbols)
+    // No extractor for this language — stay silent rather than report empty.
+    if !supports_symbols(&lang) {
+        return (stats, None);
+    }
+
+    let found = extract_symbols_capped(&lang, &text, opts.max_symbols);
+
+    (stats, Some(found))
 }
 
 fn root_display_name(root: &Path, raw: &str) -> String {
@@ -112,7 +117,7 @@ pub fn scan_tree(root: &str, opts: &ScanOpts) -> TreeNode {
         }
 
         let (stats, symbols) = if is_dir {
-            (Stats::default(), Vec::new())
+            (Stats::default(), None)
         } else {
             read_file_facts(path, opts)
         };
