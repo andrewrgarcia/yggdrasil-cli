@@ -5,9 +5,10 @@ mod formatters;
 mod scanner;
 mod snapshot;
 mod sniff;
+mod tree;
 mod types;
 
-use clap::{CommandFactory, Parser, Subcommand};
+use clap::{Parser, Subcommand};
 use diff::run_diff;
 use snapshot::run_snapshot;
 
@@ -17,7 +18,7 @@ use snapshot::run_snapshot;
     author,
     version,
     about = "✨ Yggdrasil CLI — the god-tree of your codebase.",
-    long_about = "Flatten your project into an AI-ready snapshot codex — index + contents in one command."
+    long_about = "Flatten your project into an AI-ready snapshot codex — index + contents in one command.\n\nRun `ygg` bare for a token-weighted listing of the current directory, or `ygg tree` for the full tree."
 )]
 pub struct Cli {
     #[command(subcommand)]
@@ -40,6 +41,41 @@ pub enum Commands {
         /// Align diff tags to a fixed column
         #[arg(long)]
         align_tags: bool,
+    },
+
+    /// Render the directory tree, weighted by token cost
+    ///
+    /// Every directory reports the total tokens of its whole subtree, even
+    /// when collapsed — so you can see what will actually fit in a context
+    /// window before you build a codex.
+    Tree {
+        /// Root path to render
+        #[arg(default_value = ".")]
+        path: String,
+
+        /// Levels to expand below the root (0 = root's children only)
+        #[arg(long, short = 'L')]
+        depth: Option<usize>,
+
+        /// Include hidden files and directories
+        #[arg(long, short = 'a')]
+        all: bool,
+
+        /// Do not honour .gitignore / .ignore files
+        #[arg(long)]
+        no_ignore: bool,
+
+        /// Show directories only
+        #[arg(long)]
+        dirs_only: bool,
+
+        /// Hide the token column
+        #[arg(long)]
+        no_stats: bool,
+
+        /// Exclude these paths/globs from the tree
+        #[arg(long, num_args = 1.., value_delimiter = ' ')]
+        ignore: Vec<String>,
     },
 }
 
@@ -73,6 +109,14 @@ pub struct Args {
     /// Provide inline patterns to ignore (globs, names, etc.)
     #[arg(long, num_args = 1.., value_delimiter = ' ')]
     pub ignore: Vec<String>,
+
+    /// Include hidden (dot) files in the scan
+    #[arg(long)]
+    pub hidden: bool,
+
+    /// Do not honour .gitignore / .ignore files while scanning
+    #[arg(long)]
+    pub no_ignore: bool,
 
     /// Load blacklist patterns (like .gitignore) or enter manually.
     #[arg(long, alias = "blacklist", num_args = 0..=1)]
@@ -129,13 +173,14 @@ pub mod cli {
 }
 
 fn main() {
-    let cli = Cli::parse();
-
+    // viceroy: bare `ygg` used to print --help. It now lists the current
+    // directory, weighted by token cost. `ygg --help` still prints help.
     if std::env::args().len() == 1 {
-        Cli::command().print_help().unwrap();
-        println!();
+        tree::run_list(".");
         return;
     }
+
+    let cli = Cli::parse();
 
     match cli.command {
         Some(Commands::Diff {
@@ -145,6 +190,19 @@ fn main() {
         }) => {
             run_diff(from, to, align_tags);
         }
+
+        Some(Commands::Tree {
+            path,
+            depth,
+            all,
+            no_ignore,
+            dirs_only,
+            no_stats,
+            ignore,
+        }) => {
+            tree::run_tree(&path, depth, all, no_ignore, dirs_only, no_stats, ignore);
+        }
+
         None => {
             run_snapshot(cli.args);
         }

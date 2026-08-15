@@ -1,4 +1,4 @@
-use walkdir::WalkDir;
+use ignore::WalkBuilder;
 
 use crate::cli::Args;
 use crate::types::FileEntry;
@@ -9,6 +9,22 @@ use super::patterns::load_patterns_file;
 use super::stdin::read_multiline_stdin;
 
 use std::fs;
+
+/// Build the directory walker.
+///
+// viceroy: extracted from collect_files() — walk configuration split from
+// filtering, so the ignore/hidden policy lives in one readable place.
+fn build_walker(args: &Args) -> ignore::Walk {
+    WalkBuilder::new(&args.dir)
+        .hidden(!args.hidden)
+        .ignore(!args.no_ignore)
+        .git_ignore(!args.no_ignore)
+        .git_global(!args.no_ignore)
+        .git_exclude(!args.no_ignore)
+        .parents(!args.no_ignore)
+        .filter_entry(|e| e.file_name() != ".git")
+        .build()
+}
 
 /// Collect all file paths according to ignore/only filters and flags.
 pub fn collect_files(args: &Args) -> Vec<FileEntry> {
@@ -43,47 +59,49 @@ pub fn collect_files(args: &Args) -> Vec<FileEntry> {
     let mut files = Vec::new();
 
     // Walk directory tree
-    for entry in WalkDir::new(&args.dir).into_iter().filter_map(|e| e.ok()) {
-        if entry.file_type().is_file() {
-            let path = entry.path().to_string_lossy().to_string();
-
-            // --show <ext>
-            if !args.show.is_empty() {
-                let ext = entry
-                    .path()
-                    .extension()
-                    .and_then(|e| e.to_str())
-                    .unwrap_or("");
-
-                if !args.show.contains(&ext.to_string()) {
-                    continue;
-                }
-            }
-
-            // ignore filters
-            if matches_filters(&path, &ignore_patterns, false) {
-                continue;
-            }
-
-            // only filters
-            if !matches_filters(&path, &only_patterns, true) {
-                continue;
-            }
-
-            // Read file once
-            let contents = fs::read_to_string(&path).unwrap_or_default();
-
-            let line_count = contents.lines().count();
-            let word_count = contents.split_whitespace().count();
-            let token_est = ((word_count as f32) * 1.33).round() as usize;
-
-            files.push(FileEntry {
-                path,
-                line_count,
-                word_count,
-                token_est,
-            });
+    for entry in build_walker(args).filter_map(|e| e.ok()) {
+        if !entry.file_type().map(|t| t.is_file()).unwrap_or(false) {
+            continue;
         }
+
+        let path = entry.path().to_string_lossy().to_string();
+
+        // --show <ext>
+        if !args.show.is_empty() {
+            let ext = entry
+                .path()
+                .extension()
+                .and_then(|e| e.to_str())
+                .unwrap_or("");
+
+            if !args.show.contains(&ext.to_string()) {
+                continue;
+            }
+        }
+
+        // ignore filters
+        if matches_filters(&path, &ignore_patterns, false) {
+            continue;
+        }
+
+        // only filters
+        if !matches_filters(&path, &only_patterns, true) {
+            continue;
+        }
+
+        // Read file once
+        let contents = fs::read_to_string(&path).unwrap_or_default();
+
+        let line_count = contents.lines().count();
+        let word_count = contents.split_whitespace().count();
+        let token_est = ((word_count as f32) * 1.33).round() as usize;
+
+        files.push(FileEntry {
+            path,
+            line_count,
+            word_count,
+            token_est,
+        });
     }
 
     files

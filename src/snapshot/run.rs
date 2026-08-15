@@ -3,6 +3,7 @@ use crate::scanner::collect_files;
 use crate::snapshot::archive::{archive_path_for, write_zip_archive};
 use crate::snapshot::filelist::prepare_file_list;
 use crate::snapshot::format_selection::select_formatter;
+use crate::snapshot::selection::apply_output_plan;
 use crate::snapshot::split::split_files_by_tokens;
 use crate::snapshot::writer::{open_writer, OutputTarget};
 use crate::sniff::sniff_forward_paths;
@@ -175,45 +176,9 @@ pub fn run_snapshot(mut args: Args) {
     // 1. HANDLE SHORTCUT FLAGS
     // ============================================================
 
-    // --treed = interactive selection + markdown output + index only
-    if let Some(opt) = &args.treed {
-        args.contents = false;
-        args.out = Some(match opt {
-            Some(name) => name.clone(),
-            None => "SHOW.md".to_string(),
-        });
-
-        if args.white.is_none() {
-            args.white = Some(None);
-        }
-    }
-
-    // legacy full codex interactive shortcut
-    if let Some(opt) = &args.whited {
-        args.contents = true;
-        args.out = Some(match opt {
-            Some(name) => name.clone(),
-            None => "SHOW.md".to_string(),
-        });
-
-        if args.white.is_none() {
-            args.white = Some(None);
-        }
-    }
-
-    // --printed stays full codex unless contents was intentionally left false
-    if let Some(opt) = &args.printed {
-        args.contents = true;
-        args.out = Some(match opt {
-            Some(name) => name.clone(),
-            None => "SHOW.md".to_string(),
-        });
-    }
-
-    // If user explicitly asked for treed, force index-only after printed/whited handling
-    if args.treed.is_some() {
-        args.contents = false;
-    }
+    // viceroy: extracted to snapshot::selection — the four sequential
+    // mutations of args.contents are now one tested pure function.
+    apply_output_plan(&mut args);
 
     // ============================================================
     // 2. RUN SCAN

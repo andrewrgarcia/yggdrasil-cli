@@ -26,7 +26,9 @@ fn test_markdown_output_to_file() {
         .success();
 
     let contents = fs::read_to_string(&outfile).unwrap();
-    assert!(contents.contains("# CODEX"));
+    assert!(contents.contains("# YGG CODEX"));
+    assert!(contents.contains("transport: ygg_packet"));
+    assert!(contents.contains("schema: ai-native"));
     assert!(contents.contains("generated_by: yggdrasil-cli"));
     assert!(contents.contains("format: markdown"));
 }
