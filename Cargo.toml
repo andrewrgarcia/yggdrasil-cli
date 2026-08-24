@@ -39,6 +39,7 @@ blake3 = "1.5"
 natord = "1.0.9"
 regex = "1.12.3"
 zip = "2.2"
+crossterm = "0.28"
 
 [dev-dependencies]
 assert_cmd = "2"

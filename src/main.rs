@@ -2,6 +2,7 @@
 
 mod diff;
 mod formatters;
+mod pick;
 mod scanner;
 mod snapshot;
 mod sniff;
@@ -84,6 +85,28 @@ pub enum Commands {
         /// Exclude these paths/globs from the tree
         #[arg(long, num_args = 1.., value_delimiter = ' ')]
         ignore: Vec<String>,
+    },
+
+    /// Interactively pick files in a tree UI and write a codex
+    ///
+    /// Expand folders, tick files or whole subtrees, and watch the token
+    /// cost of your selection live — then write straight to SHOW.md.
+    Pick {
+        /// Root path to pick from
+        #[arg(default_value = ".")]
+        path: String,
+
+        /// Include hidden files and directories
+        #[arg(long, short = 'a')]
+        all: bool,
+
+        /// Do not honour .gitignore / .ignore files
+        #[arg(long)]
+        no_ignore: bool,
+
+        /// Output file (default SHOW.md)
+        #[arg(long)]
+        out: Option<String>,
     },
 }
 
@@ -221,6 +244,15 @@ fn main() {
                 max_symbols,
                 ignore,
             });
+        }
+
+        Some(Commands::Pick {
+            path,
+            all,
+            no_ignore,
+            out,
+        }) => {
+            pick::run_pick(&path, all, no_ignore, out);
         }
 
         None => {
