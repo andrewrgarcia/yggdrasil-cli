@@ -241,7 +241,14 @@ fn draw(state: &mut PickState, rows: &[Row], out: &mut impl Write) -> io::Result
         state.scroll = state.cursor + 1 - list_height;
     }
 
-    queue!(out, Clear(ClearType::All), MoveTo(0, 0))?;
+    // One frame, one write. Painting straight to stdout across many small
+    // queued calls lets the terminal present a half-drawn tree; building the
+    // frame here and flushing it once is what removes the flicker.
+    let mut buf: Vec<u8> = Vec::with_capacity(8 * 1024);
+    let out_final = out;
+    let out = &mut buf;
+
+    queue!(out, MoveTo(0, 0), Clear(ClearType::UntilNewLine))?;
 
     // ── header ────────────────────────────────────────────────────────
     let root_name = state.root.display_name();
@@ -275,7 +282,8 @@ fn draw(state: &mut PickState, rows: &[Row], out: &mut impl Write) -> io::Result
     for (line, idx) in (state.scroll..rows.len().min(state.scroll + list_height)).enumerate() {
         let row = &rows[idx];
         let y = LIST_TOP + line as u16;
-        queue!(out, MoveTo(0, y))?;
+        // Clear only the line about to be rewritten — never the whole screen.
+        queue!(out, MoveTo(0, y), Clear(ClearType::UntilNewLine))?;
 
         let is_cursor = idx == state.cursor;
 
@@ -371,5 +379,17 @@ fn draw(state: &mut PickState, rows: &[Row], out: &mut impl Write) -> io::Result
         ResetColor
     )?;
 
-    out.flush()
+    // Rows the list no longer fills (tree shrank after a collapse) would
+    // otherwise keep their stale text, since nothing clears the screen now.
+    let drawn = rows.len().saturating_sub(state.scroll).min(list_height);
+    for line in drawn..list_height {
+        queue!(
+            out,
+            MoveTo(0, LIST_TOP + line as u16),
+            Clear(ClearType::UntilNewLine)
+        )?;
+    }
+
+    out_final.write_all(&buf)?;
+    out_final.flush()
 }
