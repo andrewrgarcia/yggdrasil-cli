@@ -24,7 +24,7 @@ impl DiffFormatter for DiffCliFormatter {
         }
     }
 
-    fn print_index(&self, groups: &Vec<GroupedMatches>, out: &mut dyn Write) {
+    fn print_index(&self, groups: &[GroupedMatches], out: &mut dyn Write) {
         writeln!(out, "📄 File Pairs").unwrap();
 
         for g in groups {
@@ -45,7 +45,7 @@ impl DiffFormatter for DiffCliFormatter {
         writeln!(out).unwrap();
     }
 
-    fn print_contents(&self, groups: &Vec<GroupedMatches>, out: &mut dyn Write) {
+    fn print_contents(&self, groups: &[GroupedMatches], out: &mut dyn Write) {
         for g in groups {
             if self.colored {
                 writeln!(
@@ -106,13 +106,11 @@ impl DiffFormatter for DiffCliFormatter {
                             )
                             .unwrap();
                         }
+                    } else if self.colored {
+                        writeln!(out, "{:>4} {}{}", lineno + 1, line, tag.bright_yellow())
+                            .unwrap();
                     } else {
-                        if self.colored {
-                            writeln!(out, "{:>4} {}{}", lineno + 1, line, tag.bright_yellow())
-                                .unwrap();
-                        } else {
-                            writeln!(out, "{:>4} {}{}", lineno + 1, line, tag).unwrap();
-                        }
+                        writeln!(out, "{:>4} {}{}", lineno + 1, line, tag).unwrap();
                     }
                 }
             }

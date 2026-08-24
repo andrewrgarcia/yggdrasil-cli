@@ -82,7 +82,7 @@ fn stats_cell(node: &TreeNode, opts: &RenderOpts) -> String {
         if opts.colored {
             format!("{}{}", cell, tail.truecolor(110, 110, 110))
         } else {
-            format!("{}{}", cell, tail)
+            format!("{cell}{tail}")
         }
     } else {
         cell
@@ -106,7 +106,7 @@ fn write_symbols(node: &TreeNode, prefix: &str, opts: &RenderOpts, out: &mut dyn
         return;
     };
 
-    let stem = format!("{}    ◆ ", prefix);
+    let stem = format!("{prefix}    ◆ ");
 
     if symbols.is_empty() {
         let note = "(no top-level declarations)";
@@ -119,7 +119,7 @@ fn write_symbols(node: &TreeNode, prefix: &str, opts: &RenderOpts, out: &mut dyn
             )
             .unwrap();
         } else {
-            writeln!(out, "{}{}", stem, note).unwrap();
+            writeln!(out, "{stem}{note}").unwrap();
         }
         return;
     }
@@ -134,7 +134,7 @@ fn write_symbols(node: &TreeNode, prefix: &str, opts: &RenderOpts, out: &mut dyn
             )
             .unwrap();
         } else {
-            writeln!(out, "{}{}", stem, symbol).unwrap();
+            writeln!(out, "{stem}{symbol}").unwrap();
         }
     }
 }
@@ -173,7 +173,7 @@ fn walk(
         let plain_width = prefix.chars().count() + 4 + child.display_name().chars().count();
         let pad = width.saturating_sub(plain_width) + 2;
 
-        let stem = format!("{}{}", prefix, connector);
+        let stem = format!("{prefix}{connector}");
         let stem = if opts.colored {
             stem.truecolor(90, 90, 90).to_string()
         } else {
@@ -212,7 +212,7 @@ pub fn render_tree(root: &TreeNode, opts: &RenderOpts, out: &mut dyn Write) {
     if opts.colored {
         writeln!(out, "{}", header.truecolor(0, 255, 255).bold()).unwrap();
     } else {
-        writeln!(out, "{}", header).unwrap();
+        writeln!(out, "{header}").unwrap();
     }
 
     walk(root, 0, "", width, opts, out);
@@ -265,7 +265,7 @@ fn write_footer(root: &TreeNode, opts: &RenderOpts, out: &mut dyn Write) {
     if opts.colored {
         writeln!(out, "🌳 {}", summary.bright_magenta().bold()).unwrap();
     } else {
-        writeln!(out, "🌳 {}", summary).unwrap();
+        writeln!(out, "🌳 {summary}").unwrap();
     }
 }
 

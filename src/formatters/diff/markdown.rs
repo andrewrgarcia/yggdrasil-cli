@@ -9,7 +9,7 @@ impl crate::formatters::traits::DiffFormatter for DiffMarkdownFormatter {
         writeln!(out, "# 📦 Cross-file Diff Report\n").unwrap();
     }
 
-    fn print_index(&self, groups: &Vec<GroupedMatches>, out: &mut dyn Write) {
+    fn print_index(&self, groups: &[GroupedMatches], out: &mut dyn Write) {
         writeln!(out, "## 📄 File Pairs\n").unwrap();
         for g in groups {
             writeln!(out, "- {} → {}", g.from_file, g.to_file).unwrap();
@@ -17,7 +17,7 @@ impl crate::formatters::traits::DiffFormatter for DiffMarkdownFormatter {
         writeln!(out).unwrap();
     }
 
-    fn print_contents(&self, groups: &Vec<GroupedMatches>, out: &mut dyn Write) {
+    fn print_contents(&self, groups: &[GroupedMatches], out: &mut dyn Write) {
         writeln!(out, "## 📑 Diff Contents\n").unwrap();
 
         for g in groups {

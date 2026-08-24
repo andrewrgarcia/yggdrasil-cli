@@ -20,12 +20,11 @@ fn finalize_markdown(buf: &[u8], shard_idx: Option<(usize, usize)>) -> Vec<u8> {
     let token_est = ((word_count as f32) * 1.33).round() as usize;
 
     let shard_line = shard_idx
-        .map(|(i, total)| format!("> 🔹 SHARD {} / {}\n", i, total))
+        .map(|(i, total)| format!("> 🔹 SHARD {i} / {total}\n"))
         .unwrap_or_default();
 
     let inject = format!(
-        "{}> ✍️ Words: {}\n> 🪙 Tokens (est.): {}\n\n## INDEX",
-        shard_line, word_count, token_est
+        "{shard_line}> ✍️ Words: {word_count}\n> 🪙 Tokens (est.): {token_est}\n\n## INDEX"
     );
 
     text.replacen("## INDEX", &inject, 1).into_bytes()
@@ -49,15 +48,14 @@ fn write_sniff_header(
     out: &mut dyn std::io::Write,
 ) {
     if is_markdown {
-        writeln!(out, "<!-- sniff: roots traced from {} -->", entry).unwrap();
+        writeln!(out, "<!-- sniff: roots traced from {entry} -->").unwrap();
         writeln!(
             out,
-            "> 🐺 **Yggdrasil Sniff** — branches traced from `{}`",
-            entry
+            "> 🐺 **Yggdrasil Sniff** — branches traced from `{entry}`"
         )
         .unwrap();
         writeln!(out, ">").unwrap();
-        writeln!(out, "> The world-tree read the runes of `{}`,", entry).unwrap();
+        writeln!(out, "> The world-tree read the runes of `{entry}`,").unwrap();
         writeln!(
             out,
             "> and followed {} branch{} to their roots.",
@@ -67,7 +65,7 @@ fn write_sniff_header(
         .unwrap();
         writeln!(out, ">").unwrap();
         for p in paths {
-            writeln!(out, "> - `{}`", p).unwrap();
+            writeln!(out, "> - `{p}`").unwrap();
         }
         writeln!(out).unwrap();
     } else {
@@ -108,10 +106,10 @@ fn write_sniff_header(
 
             writeln!(out, "{}", sep.truecolor(255, 200, 50)).unwrap();
         } else {
-            writeln!(out, "{}", sep).unwrap();
+            writeln!(out, "{sep}").unwrap();
             writeln!(out, "🐺  YGGDRASIL SNIFF").unwrap();
             writeln!(out, "The world-tree traced the runes of").unwrap();
-            writeln!(out, "  {}", entry).unwrap();
+            writeln!(out, "  {entry}").unwrap();
             writeln!(
                 out,
                 "and followed {} branch{} to their roots:",
@@ -119,13 +117,13 @@ fn write_sniff_header(
                 if paths.len() == 1 { "" } else { "es" }
             )
             .unwrap();
-            writeln!(out, "{}", sep2).unwrap();
+            writeln!(out, "{sep2}").unwrap();
 
             for p in paths {
-                writeln!(out, "  ⎇ {}", p).unwrap();
+                writeln!(out, "  ⎇ {p}").unwrap();
             }
 
-            writeln!(out, "{}", sep).unwrap();
+            writeln!(out, "{sep}").unwrap();
         }
 
         writeln!(out).unwrap();
@@ -155,7 +153,7 @@ pub fn run_snapshot(mut args: Args) {
         }
 
         let mut merged = discovered.clone();
-        merged.extend(args.only.drain(..));
+        merged.append(&mut args.only);
 
         let mut seen = std::collections::HashSet::new();
         args.only = merged

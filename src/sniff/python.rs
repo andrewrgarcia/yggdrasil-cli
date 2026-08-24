@@ -68,7 +68,6 @@ pub fn extract_python_imports(source: &str) -> Vec<String> {
         if let Some(rest) = trimmed.strip_prefix("import ") {
             for part in rest.split(',') {
                 let module = part
-                    .trim()
                     .split_whitespace()
                     .next() // drop "as alias"
                     .unwrap_or("")

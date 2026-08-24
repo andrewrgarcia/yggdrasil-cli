@@ -14,12 +14,12 @@ pub fn diff_file_contents(file: &str, from: &str, to: &str) {
         };
 
         let colored = match change.tag() {
-            ChangeTag::Delete => format!("\x1b[91m{}{}\x1b[0m", sign, change),
-            ChangeTag::Insert => format!("\x1b[92m{}{}\x1b[0m", sign, change),
-            ChangeTag::Equal => format!(" {}{}", sign, change),
+            ChangeTag::Delete => format!("\x1b[91m{sign}{change}\x1b[0m"),
+            ChangeTag::Insert => format!("\x1b[92m{sign}{change}\x1b[0m"),
+            ChangeTag::Equal => format!(" {sign}{change}"),
         };
 
-        print!("{}", colored);
+        print!("{colored}");
     }
 
     println!();

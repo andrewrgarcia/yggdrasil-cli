@@ -15,16 +15,16 @@ impl OutputFormatter for CliFormatter {
         if self.colored {
             let title = "✨ Project Snapshot:".bright_magenta().bold();
             let path = root.truecolor(0, 255, 255).bold();
-            writeln!(out, "{} {}", title, path).unwrap();
+            writeln!(out, "{title} {path}").unwrap();
 
             let link = format!(
                 "\x1b]8;;{}\x1b\\{}\x1b]8;;\x1b\\",
                 "https://crates.io/crates/yggdrasil-cli",
                 "*Made with Yggdrasil*".truecolor(255, 255, 0).bold()
             );
-            writeln!(out, "{}", link).unwrap();
+            writeln!(out, "{link}").unwrap();
         } else {
-            writeln!(out, "✨ Project Snapshot: {}", root).unwrap();
+            writeln!(out, "✨ Project Snapshot: {root}").unwrap();
             writeln!(
                 out,
                 "*Made with Yggdrasil* (https://crates.io/crates/yggdrasil-cli)"
@@ -41,7 +41,7 @@ impl OutputFormatter for CliFormatter {
         .unwrap();
     }
 
-    fn print_index(&self, files: &Vec<FileEntry>, out: &mut dyn Write) {
+    fn print_index(&self, files: &[FileEntry], out: &mut dyn Write) {
         let path_width = files
             .iter()
             .map(|f| f.path.len() + 2) // space + icon
@@ -131,7 +131,7 @@ impl OutputFormatter for CliFormatter {
         }
 
         writeln!(out, "\n====").unwrap();
-        writeln!(out, "📦 Total LOC: {}", total_lines).unwrap();
+        writeln!(out, "📦 Total LOC: {total_lines}").unwrap();
 
         writeln!(
             out,
@@ -147,7 +147,7 @@ impl OutputFormatter for CliFormatter {
         }
     }
 
-    fn print_contents(&self, files: &Vec<FileEntry>, out: &mut dyn Write) {
+    fn print_contents(&self, files: &[FileEntry], out: &mut dyn Write) {
         for entry in files {
             if self.colored {
                 writeln!(
@@ -163,7 +163,7 @@ impl OutputFormatter for CliFormatter {
             }
 
             match fs::read_to_string(&entry.path) {
-                Ok(content) => write!(out, "{}", content).unwrap(),
+                Ok(content) => write!(out, "{content}").unwrap(),
                 Err(_) => writeln!(out, "❌ Error reading file").unwrap(),
             };
 

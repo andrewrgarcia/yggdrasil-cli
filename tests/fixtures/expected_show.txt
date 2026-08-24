@@ -9,25 +9,29 @@ Schema: index first, then file contents.
 path                                 : lines | words | tokens
 
 📄 ./src/diff/block_hash.rs             :    18 |    66 |     88
-📄 ./src/diff/crossfile.rs              :    59 |   134 |    178
-📄 ./src/diff/engine.rs                 :    83 |   197 |    262
-📄 ./src/diff/expand.rs                 :    27 |    83 |    110
+📄 ./src/diff/crossfile.rs              :    59 |   136 |    181
+📄 ./src/diff/engine.rs                 :    83 |   195 |    259
+📄 ./src/diff/expand.rs                 :    27 |    82 |    109
 📄 ./src/diff/grouping.rs               :     0 |     0 |      0
-📄 ./src/diff/inline.rs                 :    26 |    78 |    104
+📄 ./src/diff/inline.rs                 :    26 |    71 |     94
 📄 ./src/diff/matcher.rs                :    87 |   267 |    355
 📄 ./src/diff/mod.rs                    :     9 |    24 |     32
 📄 ./src/diff/printing.rs               :     0 |     0 |      0
 📄 ./src/diff/structural.rs             :    41 |   151 |    201
-📄 ./src/formatters/cli.rs              :   244 |   560 |    745
-📄 ./src/formatters/diff/cli.rs         :   123 |   295 |    392
+📄 ./src/formatters/cli.rs              :   244 |   554 |    737
+📄 ./src/formatters/diff/cli.rs         :   121 |   293 |    390
 📄 ./src/formatters/diff/markdown.rs    :    61 |   187 |    249
 📄 ./src/formatters/diff/mod.rs         :     5 |    12 |     16
-📄 ./src/formatters/markdown.rs         :   384 |   519 |    690
+📄 ./src/formatters/markdown.rs         :   380 |   514 |    684
 📄 ./src/formatters/metadata.rs         :    62 |   106 |    141
 📄 ./src/formatters/mod.rs              :     9 |    24 |     32
 📄 ./src/formatters/symbols.rs          :   491 |  1479 |   1967
 📄 ./src/formatters/traits.rs           :    15 |    61 |     81
-📄 ./src/main.rs                        :   230 |   773 |   1028
+📄 ./src/main.rs                        :   262 |   871 |   1158
+📄 ./src/pick/mod.rs                    :    11 |    55 |     73
+📄 ./src/pick/run.rs                    :    70 |   221 |    294
+📄 ./src/pick/state.rs                  :   405 |  1193 |   1587
+📄 ./src/pick/ui.rs                     :   395 |  1336 |   1777
 📄 ./src/scanner/collect.rs             :   108 |   262 |    348
 📄 ./src/scanner/filters.rs             :    50 |   132 |    176
 📄 ./src/scanner/mod.rs                 :     7 |    18 |     24
@@ -38,23 +42,23 @@ path                                 : lines | words | tokens
 📄 ./src/snapshot/filelist.rs           :    10 |    37 |     49
 📄 ./src/snapshot/format_selection.rs   :    24 |    56 |     74
 📄 ./src/snapshot/mod.rs                :     9 |    24 |     32
-📄 ./src/snapshot/run.rs                :   311 |   880 |   1170
+📄 ./src/snapshot/run.rs                :   309 |   867 |   1153
 📄 ./src/snapshot/selection.rs          :   143 |   410 |    545
 📄 ./src/snapshot/split.rs              :    67 |   196 |    261
-📄 ./src/snapshot/writer.rs             :    51 |   175 |    233
+📄 ./src/snapshot/writer.rs             :    51 |   172 |    229
 📄 ./src/sniff/mod.rs                   :     4 |     9 |     12
-📄 ./src/sniff/python.rs                :   187 |   544 |    724
-📄 ./src/sniff/resolve.rs               :   169 |   485 |    645
+📄 ./src/sniff/python.rs                :   186 |   543 |    722
+📄 ./src/sniff/resolve.rs               :   168 |   481 |    640
 📄 ./src/tree/mod.rs                    :    17 |   126 |    168
 📄 ./src/tree/node.rs                   :   259 |   790 |   1051
-📄 ./src/tree/render.rs                 :   446 |  1288 |   1713
+📄 ./src/tree/render.rs                 :   446 |  1277 |   1698
 📄 ./src/tree/run.rs                    :    73 |   232 |    309
 📄 ./src/tree/scan.rs                   :   134 |   420 |    559
 📄 ./src/types.rs                       :    29 |    71 |     94
 📄 ./src/utils/mod.rs                   :     4 |     9 |     12
 
 ====
-📦 Total LOC: 4256
+📦 Total LOC: 5159
 
 ===============================================
 📑 File Contents

@@ -32,10 +32,10 @@ pub fn group_and_filter_matches(
                 .collect();
 
             let bhash = hash_block(&slice);
-            if seen_blocks.contains_key(&bhash) {
-                is_addition = true;
+            if let std::collections::hash_map::Entry::Vacant(e) = seen_blocks.entry(bhash) {
+                e.insert(true);
             } else {
-                seen_blocks.insert(bhash, true);
+                is_addition = true;
             }
         }
 

@@ -21,12 +21,12 @@ pub fn run_diff(from: Vec<String>, to: Vec<String>, align_tags: bool) {
 
     // Deleted files
     for f in from_set.difference(&to_set) {
-        println!("- {}", f);
+        println!("- {f}");
     }
 
     // New files
     for f in to_set.difference(&from_set) {
-        println!("+ {}", f);
+        println!("+ {f}");
     }
 
     // Same-file diffs

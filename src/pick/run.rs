@@ -20,14 +20,14 @@ pub fn run_pick(path: &str, all: bool, no_ignore: bool, out: Option<String>) {
     let tree = scan_tree(path, &scan_opts);
 
     if tree.file_count == 0 {
-        eprintln!("⚠️  nothing to pick under '{}'", path);
+        eprintln!("⚠️  nothing to pick under '{path}'");
         return;
     }
 
     let mut state = PickState::new(tree);
 
     match run_picker(&mut state) {
-        Err(e) => eprintln!("⚠️  picker failed: {}", e),
+        Err(e) => eprintln!("⚠️  picker failed: {e}"),
         Ok(None) => {} // user quit; say nothing, like ctrl-c anywhere else
         Ok(Some(paths)) => {
             let count = paths.len();

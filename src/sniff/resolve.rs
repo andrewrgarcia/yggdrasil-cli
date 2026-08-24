@@ -69,8 +69,7 @@ pub fn sniff_forward_paths(entry_file: &str, root_dir: &str) -> Vec<String> {
     // Verify the entry file itself lives under root
     if !start.starts_with(&root) {
         eprintln!(
-            "⚠️  sniff: entry file '{}' is outside --dir '{}'; aborting.",
-            entry_file, root_dir
+            "⚠️  sniff: entry file '{entry_file}' is outside --dir '{root_dir}'; aborting."
         );
         return vec![];
     }
@@ -129,7 +128,7 @@ pub fn sniff_forward_paths(entry_file: &str, root_dir: &str) -> Vec<String> {
             abs.strip_prefix(&root)
                 .ok()
                 .and_then(|rel| rel.to_str())
-                .map(|rel| format!("{}/{}", root_dir_trimmed, rel))
+                .map(|rel| format!("{root_dir_trimmed}/{rel}"))
         })
         .collect();
 

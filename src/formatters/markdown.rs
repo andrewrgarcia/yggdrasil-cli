@@ -42,8 +42,7 @@ impl OutputFormatter for MarkdownFormatter {
 
         writeln!(
             out,
-            "project: {}",
-            project_name
+            "project: {project_name}"
         ).unwrap();
 
         writeln!(
@@ -64,8 +63,7 @@ impl OutputFormatter for MarkdownFormatter {
 
         writeln!(
             out,
-            "timestamp_unix: {}",
-            timestamp
+            "timestamp_unix: {timestamp}"
         ).unwrap();
 
         writeln!(
@@ -75,7 +73,7 @@ impl OutputFormatter for MarkdownFormatter {
         writeln!(out, "## INDEX").unwrap();
     }
 
-    fn print_index(&self, files: &Vec<FileEntry>, out: &mut dyn Write) {
+    fn print_index(&self, files: &[FileEntry], out: &mut dyn Write) {
         let mut total_lines = 0usize;
 
         let header = "path";
@@ -139,14 +137,14 @@ impl OutputFormatter for MarkdownFormatter {
             .unwrap();
         }
 
-        writeln!(out, "total_loc: {}\n", total_lines).unwrap();
+        writeln!(out, "total_loc: {total_lines}\n").unwrap();
 
         if self.show_files_section {
             writeln!(out, "## FILES").unwrap();
         }
     }
 
-    fn print_contents(&self, files: &Vec<FileEntry>, out: &mut dyn Write) {
+    fn print_contents(&self, files: &[FileEntry], out: &mut dyn Write) {
         for entry in files.iter() {
 
             let meta = infer_metadata(&entry.path);
@@ -221,16 +219,14 @@ impl OutputFormatter for MarkdownFormatter {
             if content.ends_with('\n') {
                 write!(
                     out,
-                    "{}",
-                    content
+                    "{content}"
                 ).unwrap();
 
             } else {
 
                 writeln!(
                     out,
-                    "{}",
-                    content
+                    "{content}"
                 ).unwrap();
             }
 

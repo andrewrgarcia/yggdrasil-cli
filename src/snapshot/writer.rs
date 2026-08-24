@@ -19,7 +19,7 @@ pub enum OutputTarget {
 ///     - If --out <file>  → use Memory buffer (inject tokens later)
 ///     - If no --out      → write directly to stdout
 pub fn open_writer(args: &Args) -> OutputTarget {
-    if let Some(_) = &args.out {
+    if args.out.is_some() {
         // Markdown to file → we must buffer → injection patch applied later
         OutputTarget::Memory(Vec::new())
     } else {

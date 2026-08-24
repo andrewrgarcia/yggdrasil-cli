@@ -87,7 +87,7 @@ impl PickState {
                 path: child.path.clone(),
                 name: child.display_name(),
                 is_dir: child.is_dir,
-                prefix: format!("{}{}", prefix, connector),
+                prefix: format!("{prefix}{connector}"),
                 tokens: child.stats.tokens,
                 file_count: child.file_count,
                 expanded,
