@@ -1,4 +1,3 @@
-
 <!-- LOGO -->
 <p align="center">
   <img width="200" alt="ygg" src="https://github.com/user-attachments/assets/5b59f4b6-10a0-4258-b0c3-06f21da08422" />
@@ -11,13 +10,14 @@ Flatten any subset of your project into an AI-ready codex — index + contents, 
 </p>
 
 ---
+
 # What is Yggdrasil?
 
 Yggdrasil is a **project flattener and diff engine**.
 It builds a single, deterministic codex from whatever subset of your codebase you choose:
 
 * A full index of files
-* Accurate line counts
+* Accurate line counts and token estimates
 * Language-tagged code blocks
 * Markdown or plain text output
 * Optional rich diff mode
@@ -36,6 +36,168 @@ You explicitly choose the files — this makes your snapshot deterministic and d
 
 ---
 
+# Quick Start
+
+```bash
+cargo install yggdrasil-cli
+```
+
+Then, in any project:
+
+```bash
+ygg                          # token-weighted listing of this directory
+ygg tree                     # the full box-drawn tree
+ygg pick                     # choose files interactively, copy or write
+ygg --only src --printed     # flatten src/ into SHOW.md
+```
+
+If you only remember one command, make it `ygg pick`.
+
+---
+
+# Pick Mode — Interactive Selection
+
+`ygg pick` opens your project as a navigable tree. Expand folders, tick the
+files you want, and watch the token cost of your selection update live before
+you commit to anything.
+
+```bash
+ygg pick
+```
+
+```
+✨ ygg pick  yggdrasil-cli/  46 files · 22.1k tok
+
+▶ [~] ├── ▾ src/                15.5k tok  (44 files)
+  [x] │   ├── ▸ diff/            1.3k tok  (10 files)
+  [ ] │   ├── ▾ formatters/      4.3k tok   (9 files)
+  [x] │   │   ├──   symbols.rs   2.0k tok
+  [ ] │   │   ├──   markdown.rs   690 tok
+  [ ] │   └──   main.rs          1.0k tok
+  [ ] └──   README.md            1.7k tok
+
+🌳 12 selected · 4.6k tok  → SHOW.md
+```
+
+## Controls
+
+| Action | Keys |
+|---|---|
+| Move | `↑` `↓` / `k` `j` / scroll wheel |
+| Open folder | `→` / `l` / `Enter` / left-click |
+| Close folder | `←` / `h` |
+| Open everything | `*` |
+| Select / deselect | `Space` / click a file / right-click a folder |
+| Select all files | `a` |
+| Copy codex to clipboard | `c` |
+| Write codex to file | `w` |
+| Leave without doing either | `q` / `Esc` / `Ctrl-C` |
+
+Ticking a folder takes its whole subtree. Folder checkboxes are derived, not
+stored: `[x]` means every file beneath it is selected, `[~]` means some are,
+`[ ]` means none.
+
+## The token footer
+
+The running total at the bottom is the reason pick mode exists. It sums the
+token estimate of everything currently selected and colours it on the same
+heat scale as the tree — grey, green, amber, red. You can see a codex
+approaching your model's context window while you build it, instead of finding
+out after you paste.
+
+## Copying instead of writing
+
+Press `c` and the codex goes straight to your system clipboard. No file is
+written, nothing to clean up later.
+
+```
+📋 12 files · 47 KB → clipboard (xclip)
+```
+
+Yggdrasil uses whichever native clipboard tool is available — `wl-copy`,
+`xclip`, `xsel`, `pbcopy`, `clip.exe` — and falls back to an OSC 52 terminal
+escape sequence when none is found.
+
+**macOS and Windows need nothing installed** (`pbcopy` and `clip.exe` ship with
+the OS). On Linux you may need one:
+
+```bash
+sudo apt install xclip          # X11
+sudo apt install wl-clipboard   # Wayland
+```
+
+Without a tool, the OSC 52 fallback is attempted, but many terminals (GNOME
+Terminal among them) silently ignore it and there is no way to detect this. In
+that case Yggdrasil reports the codex as *sent* rather than *copied*, and
+writes it to disk as a fallback so your selection is never lost.
+
+## Flags
+
+```bash
+ygg pick                    # current directory → SHOW.md on `w`
+ygg pick src/               # root the picker deeper
+ygg pick --out CTX.md       # change the write target
+ygg pick --all              # include dotfiles
+ygg pick --no-ignore        # ignore .gitignore
+```
+
+---
+
+# Tree Mode — Seeing What Things Cost
+
+Bare `ygg` prints a flat, token-weighted listing of the current directory:
+
+```bash
+ygg
+```
+
+```
+📁 src/            15.5k tok  (44 files)
+📁 tests/            739 tok   (2 files)
+📄 Cargo.lock       3.7k tok
+📄 README.md        1.7k tok
+
+🌳 12 dirs, 52 files · 6331 lines · 22.1k tokens
+```
+
+`ygg tree` gives the full box-drawn view. Every directory reports the total
+token cost of its entire subtree, **even when collapsed** — so you can tell what
+will fit in a context window before building anything.
+
+```bash
+ygg tree                   # whole tree
+ygg tree src/              # rooted deeper
+ygg tree -L 1              # expand one level below the root
+ygg tree --dirs-only       # structure only
+ygg tree --no-stats        # hide the token column
+ygg tree -a                # include dotfiles
+ygg tree --ignore target   # exclude paths or globs
+```
+
+## Symbols
+
+`--symbols` (`-s`) shows what each file *declares* — the thing you actually
+want when deciding whether a file belongs in a codex:
+
+```bash
+ygg tree src/ --symbols
+ygg tree src/ --symbols --max-symbols 5
+```
+
+```
+├── main.rs                1.0k tok
+│   ◆ Cli
+│   ◆ Commands
+│   ◆ Args
+│   ◆ main
+```
+
+Supported for Rust, Python, JavaScript, TypeScript, JSX, and TSX. Files in
+languages without an extractor stay silent rather than claiming they declare
+nothing. Test functions and `#[cfg(test)]` modules are excluded.
+
+---
+
 # How Yggdrasil Selects Files (Critical)
 
 Yggdrasil **never prints the entire repo by default**.
@@ -45,6 +207,7 @@ You must specify *what* to include using any of:
 * `--show <extensions…>`
 * `--white <manifest>`
 * `--sniff <entry file>`
+* or interactively, with `ygg pick`
 
 You may also exclude using:
 
@@ -59,11 +222,29 @@ Formatting is separate:
 **`--printed` does not select files.**
 It only specifies the output format.
 
+## Hidden files and `.gitignore`
+
+Dotfiles are skipped by default. Two things override that:
+
+* `--hidden` includes them in any scan.
+* **Naming one explicitly is enough.** If a `--only` or `--white` pattern
+  mentions a dot-path, Yggdrasil lifts the hidden filter for that walk — so a
+  manifest containing `.windsurf/rules/viceroy.md` works without extra flags.
+  This is narrow on purpose: `--only src` still skips `src/.cache`.
+
+`.gitignore` is a separate filter and still applies. If a path you named is
+gitignored, add `--no-ignore`:
+
+```bash
+ygg --white WHITE.md --no-ignore --printed
+```
+
 ---
 
 # Snapshot Examples
 
-These examples are accurate and guaranteed to work because they always include a file-selection flag.
+These examples always include a file-selection flag, so they are guaranteed to
+produce output.
 
 ## Export all `.rs` and `.md` files as Markdown
 
@@ -124,71 +305,14 @@ ygg --show py md txt
 ygg --only src --printed
 ```
 
----
-
-## Tree Mode — Fast Index Snapshots
-
-Yggdrasil supports a lightweight **tree mode** for quickly inspecting a subset of your codebase without including file contents.
-
-### Alias: `--tree`
-
-`--tree` is a direct alias of `--only`.
+## Package the output as a ZIP
 
 ```bash
-ygg --tree src/
+ygg --only src --printed --zip
 ```
 
-Equivalent to:
-
-```bash
-ygg --only src/
-```
-
-This prints a clean index of files (paths + LOC + token estimates) to the terminal.
-
----
-
-### Interactive Tree Export: `--treed`
-
-`--treed` is the index-only counterpart to `--whited`.
-
-It:
-
-* launches interactive paste mode
-* selects files (like `--white`)
-* writes to `SHOW.md`
-* **omits the FILES section (index only)**
-
-```bash
-ygg --treed
-```
-
-Paste:
-
-```
-src/diff
-```
-
-Output (`SHOW.md`):
-
-```md
-## INDEX
-./src/diff/engine.rs : ...
-...
-total_loc: 352
-```
-
-No file contents are included.
-
----
-
-### When to use tree mode
-
-| Goal                          | Command                     |
-| ----------------------------- | --------------------------- |
-| Quick inspection of a folder  | `ygg --tree src/`           |
-| LLM-friendly index snapshot   | `ygg --treed`               |
-| Full codex (index + contents) | `ygg --only src/ --printed` |
+`SHOW.md` becomes `SHOW.zip`. Combined with `--split`, every shard is bundled
+into a single archive — convenient for upload interfaces that accept one file.
 
 ---
 
@@ -244,8 +368,9 @@ The first candidate that exists inside `--dir` is followed.
 
 * It does not scan the entire repo
 * It does not analyze runtime behavior or call graphs
-* It does not follow relative imports (`.sibling`, `..parent`) — planned for a future release
+* It does not follow relative imports (`.sibling`, `..parent`) — planned
 * It does not include external libraries
+* Python only, for now
 
 ## Mental model
 
@@ -254,6 +379,7 @@ The first candidate that exists inside `--dir` is followed.
 | `--only` | manual paths |
 | `--white` | manifest file |
 | `--sniff` | semantic expansion from entry point |
+| `pick` | interactive |
 
 Sniff is just a smart way to fill `--only`.
 All other flags (`--ignore`, `--split`, `--printed`, etc.) apply normally after expansion.
@@ -286,28 +412,22 @@ Splitting is expressed in **thousands of tokens**, not raw token counts.
 
 ---
 
-# Interactive Mode
+# Interactive Modes
 
-### **Interactive paste mode is ONLY triggered by `--whited`.**
+There are two ways to choose files interactively.
 
-`--white` never triggers interactive input.
+## `ygg pick` — the tree
 
-## The `--whited` Shortcut (Interactive)
+Navigate, tick, see the running token cost, then copy or write. Documented
+above. This is the recommended workflow.
 
-`--whited` enables the fastest workflow:
+## `--whited` — paste mode
 
-* launches interactive paste mode
-* implies `--white`
-* implies `--contents`
-* writes **Markdown** to `SHOW.md` automatically
-
-Run:
+The original interactive flow: paste a list of paths, get `SHOW.md`.
 
 ```bash
 ygg --whited
 ```
-
-You will see:
 
 ```
 Enter WHITE patterns (one per line):
@@ -323,9 +443,11 @@ src/utils/io.rs
 README.md
 ```
 
-Then Yggdrasil generates `SHOW.md` automatically.
+`--whited` implies `--white`, implies `--contents`, and writes Markdown to
+`SHOW.md`. `--treed` is the index-only counterpart: same paste flow, but the
+FILES section is omitted.
 
-This is the only flag that triggers interactive paste mode.
+**`--white` never triggers interactive input** — only `--whited` and `--treed` do.
 
 ---
 
@@ -375,6 +497,13 @@ Install from local source:
 cargo install --path . --force
 ```
 
+Optional, for clipboard support on Linux:
+
+```bash
+sudo apt install xclip          # X11
+sudo apt install wl-clipboard   # Wayland
+```
+
 ---
 
 # Philosophy
@@ -389,6 +518,7 @@ Design principles:
 * Minimal configuration
 * LLM-friendly structure
 * Complete control over what's included
+* Show the cost before it is paid
 
 ---
 
@@ -417,11 +547,31 @@ Design principles:
 * Nordic-flavoured sniff header in both CLI and Markdown output
 * `--dir` promoted to named flag for robustness
 
-### Planned (v0.5 → v1.0)
+### Completed (v0.7.0)
+
+* `ygg tree`: box-drawn directory view, weighted by token cost
+* Bare `ygg`: flat token-weighted listing
+* `--symbols`: declared-symbol extraction for Rust, Python, JS, TS
+* `--zip`: package generated output into an archive
+
+### Completed (v0.8.0)
+
+* `ygg pick`: interactive terminal file selection with live token budgeting
+* Tri-state subtree selection
+* Mouse and keyboard navigation
+
+### Completed (v0.9.0)
+
+* `c` in pick mode: copy the codex straight to the system clipboard
+* Native clipboard tool detection with OSC 52 fallback
+* Explicitly named dot-paths are no longer skipped by the walker
+
+### Planned (v1.0)
 
 * Relative import resolution in `--sniff` (`.sibling`, `..parent`)
 * Multi-language sniff (Rust `use`, TypeScript `import`)
-* Tree-view / flat-view toggle
+* Filter-as-you-type inside `ygg pick`
+* Symbols shown inline in the picker
 * Themeable CLI output
 * HTML codex export
 * Combined codex+diff bundles

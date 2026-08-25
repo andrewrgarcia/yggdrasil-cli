@@ -10,13 +10,25 @@ use super::stdin::read_multiline_stdin;
 
 use std::fs;
 
-/// Build the directory walker.
+/// Does any selection pattern name a dot-path?
 ///
-// viceroy: extracted from collect_files() — walk configuration split from
-// filtering, so the ignore/hidden policy lives in one readable place.
-fn build_walker(args: &Args) -> ignore::Walk {
+/// `--white`/`--only` are explicit: if the user typed `.windsurf/rules/x.md`,
+/// the walker hiding dotfiles means the file can never be reached no matter
+/// what they wrote. Naming a hidden path IS the request to see it.
+///
+/// Deliberately narrow — it looks for a leading dot on a path *component*, so
+/// `--only src` keeps hiding `src/.cache`, and only a pattern that actually
+/// mentions a dot-path lifts the filter.
+fn mentions_hidden(patterns: &[String]) -> bool {
+    patterns.iter().any(|p| {
+        p.split('/')
+            .any(|part| part.starts_with('.') && part != "." && part != "..")
+    })
+}
+
+fn build_walker(args: &Args, force_hidden: bool) -> ignore::Walk {
     WalkBuilder::new(&args.dir)
-        .hidden(!args.hidden)
+        .hidden(!args.hidden && !force_hidden)
         .ignore(!args.no_ignore)
         .git_ignore(!args.no_ignore)
         .git_global(!args.no_ignore)
@@ -56,10 +68,14 @@ pub fn collect_files(args: &Args) -> Vec<FileEntry> {
         }
     }
 
+    // Resolved after --white/--black are loaded, so patterns that arrived
+    // from a manifest file count too.
+    let force_hidden = mentions_hidden(&only_patterns);
+
     let mut files = Vec::new();
 
     // Walk directory tree
-    for entry in build_walker(args).filter_map(|e| e.ok()) {
+    for entry in build_walker(args, force_hidden).filter_map(|e| e.ok()) {
         if !entry.file_type().map(|t| t.is_file()).unwrap_or(false) {
             continue;
         }

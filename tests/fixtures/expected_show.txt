@@ -33,7 +33,7 @@ path                                 : lines | words | tokens
 📄 ./src/pick/run.rs                    :   137 |   492 |    654
 📄 ./src/pick/state.rs                  :   405 |  1193 |   1587
 📄 ./src/pick/ui.rs                     :   450 |  1499 |   1994
-📄 ./src/scanner/collect.rs             :   108 |   262 |    348
+📄 ./src/scanner/collect.rs             :   124 |   363 |    483
 📄 ./src/scanner/filters.rs             :    50 |   132 |    176
 📄 ./src/scanner/mod.rs                 :     7 |    18 |     24
 📄 ./src/scanner/normalize.rs           :    59 |   174 |    231
@@ -59,7 +59,7 @@ path                                 : lines | words | tokens
 📄 ./src/utils/mod.rs                   :     4 |     9 |     12
 
 ====
-📦 Total LOC: 5586
+📦 Total LOC: 5602
 
 ===============================================
 📑 File Contents
