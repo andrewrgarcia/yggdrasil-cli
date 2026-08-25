@@ -6,4 +6,4 @@ pub mod selection;
 pub mod split;
 pub mod writer;
 
-pub use run::run_snapshot;
+pub use run::{render_snapshot, run_snapshot};

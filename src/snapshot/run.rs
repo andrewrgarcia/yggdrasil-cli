@@ -130,6 +130,29 @@ fn write_sniff_header(
     }
 }
 
+/// Render a codex to bytes instead of writing it anywhere.
+///
+/// The single-document path only — no split, no zip — because the callers
+/// that want bytes (the picker's clipboard copy) want one blob, not shards.
+pub fn render_snapshot(args: &Args) -> Vec<u8> {
+    let root = args.dir.clone();
+
+    let files = collect_files(args);
+    let prepared = prepare_file_list(files);
+    let fmt = select_formatter(args);
+
+    let mut buf = Vec::new();
+
+    fmt.print_preamble(&root, &mut buf);
+    fmt.print_index(&prepared, &mut buf);
+
+    if args.contents {
+        fmt.print_contents(&prepared, &mut buf);
+    }
+
+    finalize_markdown(&buf, None)
+}
+
 /// Run the project snapshot (default command)
 pub fn run_snapshot(mut args: Args) {
     //

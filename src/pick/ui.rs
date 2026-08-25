@@ -81,14 +81,27 @@ impl Drop for TermGuard {
     }
 }
 
+/// What the user asked for on the way out.
+pub enum Outcome {
+    /// Left without producing anything.
+    Quit,
+    /// `w` — write the codex to a file.
+    Write(Vec<String>),
+    /// `c` — render the codex and put it on the clipboard, no file.
+    Copy(Vec<String>),
+}
+
 /// Run the interactive picker over an already-scanned tree.
 ///
-/// Returns `Some(selected file paths)` when the user confirms with `w`,
-/// `None` when they quit. Paths come back in the same form `collect_files`
-/// emits, so they can be fed straight into `args.only`.
-pub fn run_picker(state: &mut PickState) -> io::Result<Option<Vec<String>>> {
+/// Paths come back in the same form `collect_files` emits, so they can be fed
+/// straight into `args.only`.
+pub fn run_picker(state: &mut PickState) -> io::Result<Outcome> {
     let _guard = TermGuard::enter()?;
     let mut out = io::stdout();
+
+    // A one-shot message shown in place of the key hints — cleared by the
+    // next keypress, so it never goes stale.
+    let mut flash: Option<String> = None;
 
     loop {
         let rows = state.rows();
@@ -96,27 +109,45 @@ pub fn run_picker(state: &mut PickState) -> io::Result<Option<Vec<String>>> {
             state.cursor = rows.len() - 1;
         }
 
-        draw(state, &rows, &mut out)?;
+        draw(state, &rows, flash.as_deref(), &mut out)?;
 
         match event::read()? {
             Event::Key(key) => {
                 if key.kind != KeyEventKind::Press {
                     continue;
                 }
-                match on_key(state, &rows, key) {
+                flash = None;
+                let verdict = on_key(state, &rows, key);
+
+                match verdict {
                     Verdict::Continue => {}
-                    Verdict::Quit => return Ok(None),
-                    Verdict::Write => {
+                    Verdict::Quit => return Ok(Outcome::Quit),
+                    Verdict::Write | Verdict::Copy => {
                         let paths = state.selection_paths();
-                        if !paths.is_empty() {
-                            return Ok(Some(paths));
+
+                        // Nothing selected: an empty codex would be a
+                        // confusing no-op. Say so — silently ignoring the
+                        // key is indistinguishable from a broken key.
+                        if paths.is_empty() {
+                            flash = Some(
+                                "nothing selected — press space to tick a file first"
+                                    .to_string(),
+                            );
+                            continue;
                         }
-                        // Nothing selected: writing an empty codex would be
-                        // a confusing no-op, so stay in the picker.
+
+                        return Ok(if matches!(verdict, Verdict::Copy) {
+                            Outcome::Copy(paths)
+                        } else {
+                            Outcome::Write(paths)
+                        });
                     }
                 }
             }
-            Event::Mouse(m) => on_mouse(state, &rows, m),
+            Event::Mouse(m) => {
+                flash = None;
+                on_mouse(state, &rows, m);
+            }
             Event::Resize(_, _) => {}
             _ => {}
         }
@@ -127,6 +158,7 @@ enum Verdict {
     Continue,
     Quit,
     Write,
+    Copy,
 }
 
 fn on_key(state: &mut PickState, rows: &[Row], key: KeyEvent) -> Verdict {
@@ -138,6 +170,7 @@ fn on_key(state: &mut PickState, rows: &[Row], key: KeyEvent) -> Verdict {
             return Verdict::Quit
         }
         KeyCode::Char('w') => return Verdict::Write,
+        KeyCode::Char('c') => return Verdict::Copy,
 
         KeyCode::Up | KeyCode::Char('k') => {
             state.cursor = state.cursor.saturating_sub(1);
@@ -230,7 +263,12 @@ fn on_mouse(state: &mut PickState, rows: &[Row], m: MouseEvent) {
     }
 }
 
-fn draw(state: &mut PickState, rows: &[Row], out: &mut impl Write) -> io::Result<()> {
+fn draw(
+    state: &mut PickState,
+    rows: &[Row],
+    flash: Option<&str>,
+    out: &mut impl Write,
+) -> io::Result<()> {
     let (width, height) = terminal::size()?;
     let list_height = height.saturating_sub(LIST_TOP + FOOTER_ROWS).max(1) as usize;
 
@@ -362,6 +400,7 @@ fn draw(state: &mut PickState, rows: &[Row], out: &mut impl Write) -> io::Result
     queue!(
         out,
         MoveTo(0, height.saturating_sub(2)),
+        Clear(ClearType::UntilNewLine),
         SetAttribute(Attribute::Bold),
         Print("🌳 "),
         SetForegroundColor(heat_color(sel_tokens)),
@@ -374,10 +413,26 @@ fn draw(state: &mut PickState, rows: &[Row], out: &mut impl Write) -> io::Result
         SetAttribute(Attribute::Reset),
         Print("  → SHOW.md"),
         MoveTo(0, height.saturating_sub(1)),
-        SetForegroundColor(Color::Rgb { r: 130, g: 130, b: 130 }),
-        Print("space/click select · enter/→ open · ← close · * open all · a all · w write codex · q quit"),
-        ResetColor
+        Clear(ClearType::UntilNewLine)
     )?;
+
+    // The flash takes the hint line when present — same row, louder colour.
+    match flash {
+        Some(msg) => queue!(
+            out,
+            SetForegroundColor(Color::Rgb { r: 255, g: 200, b: 50 }),
+            SetAttribute(Attribute::Bold),
+            Print(format!("⚠  {msg}")),
+            SetAttribute(Attribute::Reset),
+            ResetColor
+        )?,
+        None => queue!(
+            out,
+            SetForegroundColor(Color::Rgb { r: 130, g: 130, b: 130 }),
+            Print("space/click select · enter/→ open · ← close · * open all · a all · c copy · w write · q quit"),
+            ResetColor
+        )?,
+    }
 
     // Rows the list no longer fills (tree shrank after a collapse) would
     // otherwise keep their stale text, since nothing clears the screen now.
