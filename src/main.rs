@@ -104,6 +104,11 @@ pub enum Commands {
         #[arg(long)]
         no_ignore: bool,
 
+        /// Pack the selection as a ZIP: the picked files at their real paths,
+        /// plus a `_CODEX.md` carrying the index. Makes `w` zip too.
+        #[arg(long)]
+        zip: bool,
+
         /// Output file (default SHOW.md)
         #[arg(long)]
         out: Option<String>,
@@ -176,7 +181,12 @@ pub struct Args {
     #[arg(long, num_args = 0..=1, value_name = "K")]
     pub split: Option<Option<usize>>,
 
-    /// Package generated file output into a ZIP archive
+    /// Package the output into a ZIP archive.
+    ///
+    /// With contents (`--printed` / `--whited`): the picked files at their
+    /// real paths under a `_CODEX.md` index — an archive an LLM can index
+    /// per-file. With `--split`: the shard documents. With `--treed`: the
+    /// index document alone.
     #[arg(long)]
     pub zip: bool,
 
@@ -250,9 +260,10 @@ fn main() {
             path,
             all,
             no_ignore,
+            zip,
             out,
         }) => {
-            pick::run_pick(&path, all, no_ignore, out);
+            pick::run_pick(&path, all, no_ignore, zip, out);
         }
 
         None => {

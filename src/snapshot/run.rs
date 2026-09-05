@@ -1,9 +1,11 @@
 use crate::cli::Args;
 use crate::scanner::collect_files;
-use crate::snapshot::archive::{archive_path_for, write_zip_archive};
+use crate::snapshot::archive::{
+    archive_path_for, readme_from_codex, write_tree_archive, write_zip_archive,
+};
 use crate::snapshot::filelist::prepare_file_list;
 use crate::snapshot::format_selection::select_formatter;
-use crate::snapshot::selection::apply_output_plan;
+use crate::snapshot::selection::{apply_output_plan, zip_shape, ZipShape};
 use crate::snapshot::split::split_files_by_tokens;
 use crate::snapshot::writer::{open_writer, OutputTarget};
 use crate::sniff::sniff_forward_paths;
@@ -287,15 +289,36 @@ pub fn run_snapshot(mut args: Args) {
 
                 if args.zip {
                     let archive_path = archive_path_for(output_path);
-                    let entries = vec![(
-                        archive_entry_name(output_path),
-                        finalized,
-                    )];
 
-                    write_zip_archive(&archive_path, &entries)
-                        .expect("Failed to write ZIP archive");
+                    if zip_shape(args.contents, split_k) == ZipShape::Tree {
+                        let paths: Vec<String> =
+                            prepared.iter().map(|f| f.path.clone()).collect();
+                        let index = readme_from_codex(&finalized);
 
-                    eprintln!("📦 {}", archive_path.display());
+                        let report = write_tree_archive(&archive_path, &index, &paths)
+                            .expect("Failed to write ZIP archive");
+
+                        eprintln!(
+                            "📦 {} files + {} → {}",
+                            report.written,
+                            report.index_name,
+                            archive_path.display()
+                        );
+
+                        for p in &report.skipped {
+                            eprintln!("   ⚠️  unreadable, skipped: {p}");
+                        }
+                    } else {
+                        let entries = vec![(
+                            archive_entry_name(output_path),
+                            finalized,
+                        )];
+
+                        write_zip_archive(&archive_path, &entries)
+                            .expect("Failed to write ZIP archive");
+
+                        eprintln!("📦 {}", archive_path.display());
+                    }
                 } else {
                     fs::write(output_path, finalized)
                         .expect("Failed to write final Markdown file");

@@ -1,4 +1,5 @@
 use crate::cli::Args;
+use crate::snapshot::archive::{archive_path_for, readme_from_codex, write_tree_archive};
 use crate::snapshot::{render_snapshot, run_snapshot};
 use crate::tree::scan::{scan_tree, ScanOpts};
 
@@ -10,13 +11,13 @@ use super::ui::{run_picker, Outcome};
 ///
 /// The picker fills the same two slots the flags would have: the selection is
 /// `--only <paths…>`, and the destination is either `--printed` (write) or
-/// nothing at all (copy, which renders to memory).
+/// nothing at all (copy and zip, which render to memory).
 fn args_for(path: &str, all: bool, no_ignore: bool, only: Vec<String>, printed: Option<Option<String>>) -> Args {
     Args {
         dir: path.to_string(),
         show: Vec::new(),
         // For the write path this is resolved by apply_output_plan; for the
-        // copy path nothing resolves it, so it must already be true.
+        // in-memory paths nothing resolves it, so it must already be true.
         contents: printed.is_none(),
         md: printed.is_none(),
         only,
@@ -37,8 +38,8 @@ fn args_for(path: &str, all: bool, no_ignore: bool, only: Vec<String>, printed: 
     }
 }
 
-/// `ygg pick` — scan, choose interactively, then write or copy the codex.
-pub fn run_pick(path: &str, all: bool, no_ignore: bool, out: Option<String>) {
+/// `ygg pick` — scan, choose interactively, then write, copy, or pack.
+pub fn run_pick(path: &str, all: bool, no_ignore: bool, zip: bool, out: Option<String>) {
     let scan_opts = ScanOpts {
         hidden: all,
         no_ignore,
@@ -62,6 +63,11 @@ pub fn run_pick(path: &str, all: bool, no_ignore: bool, out: Option<String>) {
 
         // User quit; say nothing, like ctrl-c anywhere else.
         Ok(Outcome::Quit) => {}
+
+        // `--zip` makes the write key mean "pack it", so the flag and the
+        // key never disagree about what `w` produces.
+        Ok(Outcome::Write(paths)) if zip => emit_zip(path, all, no_ignore, paths, &out),
+        Ok(Outcome::Zip(paths)) => emit_zip(path, all, no_ignore, paths, &out),
 
         Ok(Outcome::Write(paths)) => {
             let count = paths.len();
@@ -116,10 +122,46 @@ pub fn run_pick(path: &str, all: bool, no_ignore: bool, out: Option<String>) {
     }
 }
 
-/// Write the rendered codex to disk when the clipboard could not be trusted.
+/// Pack the selection as a directory-preserving archive.
 ///
-/// Losing a hand-built selection because a clipboard tool was missing is the
-/// one outcome worth engineering against.
+/// The codex is rendered in full so its word/token stats describe the whole
+/// selection, then split: the header and INDEX become the archive's README,
+/// and the file bodies go in as real files at their real paths. That is the
+/// form an upload interface can index per-file rather than as one blob.
+fn emit_zip(path: &str, all: bool, no_ignore: bool, paths: Vec<String>, out: &Option<String>) {
+    let codex = render_snapshot(&args_for(path, all, no_ignore, paths.clone(), None));
+    let readme = readme_from_codex(&codex);
+
+    let target = out.clone().unwrap_or_else(|| "SHOW.md".to_string());
+    let archive = archive_path_for(&target);
+
+    match write_tree_archive(&archive, &readme, &paths) {
+        Ok(report) => {
+            eprintln!(
+                "📦 {} file{} + {} → {}",
+                report.written,
+                plural(report.written),
+                report.index_name,
+                archive.display()
+            );
+            for p in &report.skipped {
+                eprintln!("   ⚠️  unreadable, skipped: {p}");
+            }
+        }
+        Err(e) => {
+            eprintln!("⚠️  could not write {}: {e}", archive.display());
+            if let Some(t) = rescue(&codex, out) {
+                eprintln!("   Wrote {t} instead, so the selection is not lost.");
+            }
+        }
+    }
+}
+
+/// Write the rendered codex to disk when the intended output could not be
+/// produced.
+///
+/// Losing a hand-built selection because a clipboard tool was missing — or a
+/// zip could not be opened — is the one outcome worth engineering against.
 fn rescue(codex: &[u8], out: &Option<String>) -> Option<String> {
     let target = out.clone().unwrap_or_else(|| "SHOW.md".to_string());
     match std::fs::write(&target, codex) {

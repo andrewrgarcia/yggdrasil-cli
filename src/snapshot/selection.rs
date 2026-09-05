@@ -82,6 +82,33 @@ pub fn apply_output_plan(args: &mut Args) {
     }
 }
 
+/// The two things `--zip` can produce.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum ZipShape {
+    /// The rendered document(s), flat. One entry per shard.
+    Document,
+    /// The source files at their real paths, under a `_CODEX.md` index.
+    Tree,
+}
+
+/// Which archive `--zip` should build.
+///
+/// The rule lives here as one expression because it is a policy question,
+/// not a rendering detail, and because both of its inputs are decided
+/// elsewhere: `contents` by `plan_output`, `split_k` by the CLI.
+///
+/// A zip holding a single document is that document with an extra step, so
+/// contents-bearing output packs as a tree. The two exceptions are real:
+/// `--split` means the shard boundary is the point, and `--treed` has no
+/// file bodies to unpack in the first place.
+pub fn zip_shape(contents: bool, split_k: usize) -> ZipShape {
+    if contents && split_k == 0 {
+        ZipShape::Tree
+    } else {
+        ZipShape::Document
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -139,5 +166,26 @@ mod tests {
     fn explicit_names_win() {
         let p = plan(None, None, Some(Some("MyFile.md")));
         assert_eq!(p.out.as_deref(), Some("MyFile.md"));
+    }
+
+    /// `contents` here is post-`apply_output_plan`, which is what the caller
+    /// passes — so these cases are named by the flag the user typed.
+    #[test]
+    fn printed_and_whited_zip_to_a_browsable_tree() {
+        // --printed --zip / --whited --zip: contents are present, no split.
+        assert_eq!(zip_shape(true, 0), ZipShape::Tree);
+    }
+
+    #[test]
+    fn treed_zip_stays_a_document() {
+        // --treed --zip: index only. There are no contents to unpack.
+        assert_eq!(zip_shape(false, 0), ZipShape::Document);
+    }
+
+    #[test]
+    fn split_zip_stays_shards_even_with_contents() {
+        // --printed --split --zip: N token-bounded packets IS the deliverable.
+        assert_eq!(zip_shape(true, 32), ZipShape::Document);
+        assert_eq!(zip_shape(false, 32), ZipShape::Document);
     }
 }

@@ -89,6 +89,9 @@ pub enum Outcome {
     Write(Vec<String>),
     /// `c` — render the codex and put it on the clipboard, no file.
     Copy(Vec<String>),
+    /// `z` — pack the selected files, at their real paths, under a README
+    /// that is the codex index.
+    Zip(Vec<String>),
 }
 
 /// Run the interactive picker over an already-scanned tree.
@@ -122,7 +125,7 @@ pub fn run_picker(state: &mut PickState) -> io::Result<Outcome> {
                 match verdict {
                     Verdict::Continue => {}
                     Verdict::Quit => return Ok(Outcome::Quit),
-                    Verdict::Write | Verdict::Copy => {
+                    Verdict::Write | Verdict::Copy | Verdict::Zip => {
                         let paths = state.selection_paths();
 
                         // Nothing selected: an empty codex would be a
@@ -136,10 +139,10 @@ pub fn run_picker(state: &mut PickState) -> io::Result<Outcome> {
                             continue;
                         }
 
-                        return Ok(if matches!(verdict, Verdict::Copy) {
-                            Outcome::Copy(paths)
-                        } else {
-                            Outcome::Write(paths)
+                        return Ok(match verdict {
+                            Verdict::Copy => Outcome::Copy(paths),
+                            Verdict::Zip => Outcome::Zip(paths),
+                            _ => Outcome::Write(paths),
                         });
                     }
                 }
@@ -159,6 +162,7 @@ enum Verdict {
     Quit,
     Write,
     Copy,
+    Zip,
 }
 
 fn on_key(state: &mut PickState, rows: &[Row], key: KeyEvent) -> Verdict {
@@ -171,6 +175,7 @@ fn on_key(state: &mut PickState, rows: &[Row], key: KeyEvent) -> Verdict {
         }
         KeyCode::Char('w') => return Verdict::Write,
         KeyCode::Char('c') => return Verdict::Copy,
+        KeyCode::Char('z') => return Verdict::Zip,
 
         KeyCode::Up | KeyCode::Char('k') => {
             state.cursor = state.cursor.saturating_sub(1);
@@ -429,7 +434,7 @@ fn draw(
         None => queue!(
             out,
             SetForegroundColor(Color::Rgb { r: 130, g: 130, b: 130 }),
-            Print("space/click select · enter/→ open · ← close · * open all · a all · c copy · w write · q quit"),
+            Print("space/click select · enter/→ open · ← close · * open all · a all · c copy · w write · z zip · q quit"),
             ResetColor
         )?,
     }

@@ -27,24 +27,24 @@ path                                 : lines | words | tokens
 📄 ./src/formatters/mod.rs              :     9 |    24 |     32
 📄 ./src/formatters/symbols.rs          :   491 |  1479 |   1967
 📄 ./src/formatters/traits.rs           :    15 |    61 |     81
-📄 ./src/main.rs                        :   262 |   871 |   1158
+📄 ./src/main.rs                        :   273 |   940 |   1250
 📄 ./src/pick/clipboard.rs              :   280 |  1063 |   1414
-📄 ./src/pick/mod.rs                    :    13 |    71 |     94
-📄 ./src/pick/run.rs                    :   137 |   492 |    654
+📄 ./src/pick/mod.rs                    :    13 |    73 |     97
+📄 ./src/pick/run.rs                    :   179 |   710 |    944
 📄 ./src/pick/state.rs                  :   405 |  1193 |   1587
-📄 ./src/pick/ui.rs                     :   450 |  1499 |   1994
+📄 ./src/pick/ui.rs                     :   455 |  1533 |   2039
 📄 ./src/scanner/collect.rs             :   124 |   363 |    483
 📄 ./src/scanner/filters.rs             :    50 |   132 |    176
 📄 ./src/scanner/mod.rs                 :     7 |    18 |     24
 📄 ./src/scanner/normalize.rs           :    59 |   174 |    231
 📄 ./src/scanner/patterns.rs            :    31 |    52 |     69
 📄 ./src/scanner/stdin.rs               :    33 |    90 |    120
-📄 ./src/snapshot/archive.rs            :    57 |   139 |    185
+📄 ./src/snapshot/archive.rs            :   406 |  1385 |   1842
 📄 ./src/snapshot/filelist.rs           :    10 |    37 |     49
 📄 ./src/snapshot/format_selection.rs   :    24 |    56 |     74
 📄 ./src/snapshot/mod.rs                :     9 |    25 |     33
-📄 ./src/snapshot/run.rs                :   332 |   950 |   1264
-📄 ./src/snapshot/selection.rs          :   143 |   410 |    545
+📄 ./src/snapshot/run.rs                :   355 |  1010 |   1343
+📄 ./src/snapshot/selection.rs          :   191 |   649 |    863
 📄 ./src/snapshot/split.rs              :    67 |   196 |    261
 📄 ./src/snapshot/writer.rs             :    51 |   172 |    229
 📄 ./src/sniff/mod.rs                   :     4 |     9 |     12
@@ -59,7 +59,7 @@ path                                 : lines | words | tokens
 📄 ./src/utils/mod.rs                   :     4 |     9 |     12
 
 ====
-📦 Total LOC: 5602
+📦 Total LOC: 6080
 
 ===============================================
 📑 File Contents

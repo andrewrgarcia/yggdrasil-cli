@@ -91,7 +91,8 @@ ygg pick
 | Select all files | `a` |
 | Copy codex to clipboard | `c` |
 | Write codex to file | `w` |
-| Leave without doing either | `q` / `Esc` / `Ctrl-C` |
+| Pack selection as a ZIP folder | `z` |
+| Leave without doing any of it | `q` / `Esc` / `Ctrl-C` |
 
 Ticking a folder takes its whole subtree. Folder checkboxes are derived, not
 stored: `[x]` means every file beneath it is selected, `[~]` means some are,
@@ -137,6 +138,7 @@ writes it to disk as a fallback so your selection is never lost.
 ygg pick                    # current directory → SHOW.md on `w`
 ygg pick src/               # root the picker deeper
 ygg pick --out CTX.md       # change the write target
+ygg pick --zip              # make `w` pack SHOW.zip instead of SHOW.md
 ygg pick --all              # include dotfiles
 ygg pick --no-ignore        # ignore .gitignore
 ```
@@ -311,8 +313,39 @@ ygg --only src --printed
 ygg --only src --printed --zip
 ```
 
-`SHOW.md` becomes `SHOW.zip`. Combined with `--split`, every shard is bundled
-into a single archive — convenient for upload interfaces that accept one file.
+`SHOW.md` becomes `SHOW.zip` — but the archive is not a codex in a bag. It is
+the selected files at their real paths, plus a `_CODEX.md` at the root:
+
+```
+SHOW.zip
+├── _CODEX.md
+└── src/
+    ├── main.rs
+    └── pick/
+        ├── clipboard.rs
+        └── ui.rs
+```
+
+`_CODEX.md` is the codex with its FILES section removed — the same preamble,
+the same word and token totals for the whole selection, the same INDEX table.
+The contents are not inlined because they are right there as files.
+
+This is the better shape for an upload interface. Archives get unpacked and
+indexed per file, so the model can retrieve one file instead of swallowing the
+whole blob, extensions survive (so does language detection), and the structure
+stays browsable. A zip holding a single `SHOW.md` is just `SHOW.md` with an
+extra step.
+
+Two cases stay flat documents, on purpose:
+
+| Command | Archive contains |
+|---|---|
+| `ygg --printed --zip` / `ygg --whited --zip` | the files, at their paths, under `_CODEX.md` |
+| `ygg --printed --split --zip` | the shard documents — the packet boundary *is* the deliverable |
+| `ygg --treed --zip` | the index document alone — there are no contents to unpack |
+
+The index is named `_CODEX.md` rather than `README.md` so it never collides
+with the repo's own README, and so it sorts above every source folder.
 
 ---
 
@@ -565,6 +598,12 @@ Design principles:
 * `c` in pick mode: copy the codex straight to the system clipboard
 * Native clipboard tool detection with OSC 52 fallback
 * Explicitly named dot-paths are no longer skipped by the walker
+
+### Completed (v0.10.0)
+
+* `--zip` on a contents-bearing codex now packs a browsable folder
+* `z` in pick mode: pack the selection without writing a codex first
+* `_CODEX.md` index at the archive root, carrying the full token bill
 
 ### Planned (v1.0)
 
